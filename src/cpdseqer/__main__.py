@@ -2,7 +2,8 @@ import argparse
 import sys
 import logging
 import os
-from AnalysisUtils import demultiplex, bam2dinucleotide
+
+from cpdseqer.analysis import demultiplex, bam2dinucleotide, statistic
 
 def initialize_logger(logfile, args):
   logger = logging.getLogger('cpdseqer')
