@@ -69,7 +69,7 @@ def main():
   parser_s = subparsers.add_parser('statistic')
   parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide file', required=NOT_DEBUG)
   parser_s.add_argument('-c', '--coordinate_files', action='store', nargs='?', help='Input coordinate files', required=NOT_DEBUG)
-  parser_s.add_argument('-n', '--coordinate_names', action='store', nargs='?', default_value="", help='Input coordinate names')
+  parser_s.add_argument('-n', '--coordinate_names', action='store', nargs='?', default="", help='Input coordinate names')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', default="-", help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv)==1:
