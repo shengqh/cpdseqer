@@ -153,7 +153,7 @@ def remove_chr(chrom):
     result = chrom
   return(result)
   
-def statistic(logger, dinucleotideFile, outputFile, coordinateFiles, coordinateFileNames = [], useSpace=False):
+def statistic(logger, dinucleotideFile, outputFile, coordinateFiles, coordinateFileNames = [], useSpace=False, addChr=False):
   coordinates = []
   hasName = len(coordinateFileNames) == len(coordinateFiles)
   delimit = ' ' if useSpace else '\t'
@@ -168,9 +168,9 @@ def statistic(logger, dinucleotideFile, outputFile, coordinateFiles, coordinateF
     with open(coordinateFile, "rt") as fin:
       for line in fin:
         parts = line.rstrip().split(delimit)
-        chrom = parts[0]
+        chrom = "chr" + parts[0] if addChr else parts[0] 
         catName = defaultCat if hasName else parts[3] if len(parts) >= 4 else defaultCat
-        coordinates.append(CategoryItem("chr" + chrom, int(parts[1]), int(parts[2]), catName))
+        coordinates.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
         
   logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
 
