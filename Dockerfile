@@ -16,6 +16,7 @@ RUN cd /opt; \
     unzip bowtie2-${BOWTIE2_VERSION}-linux-x86_64.zip ; \
     rm -rf bowtie2-${BOWTIE2_VERSION}-linux-x86_64.zip; \
     bowtie2 --version
+    
 RUN pip install git+git://github.com/shengqh/cpdseqer.git
 
 RUN cpdseqer -h
