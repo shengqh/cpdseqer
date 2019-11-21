@@ -56,8 +56,8 @@ def main():
   # create the parser for the "demultiplex" command
   parser_d = subparsers.add_parser('demultiplex')
   parser_d.add_argument('-i', '--input', action='store', nargs='?', help="Input fastq gzipped file", required=NOT_DEBUG)
-  parser_d.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_d.add_argument('-b', '--barcodeFile', action='store', nargs='?', help='Barcode definition file', required=NOT_DEBUG)
+  parser_d.add_argument('-o', '--output', action='store', nargs='?', help="Output folder", required=NOT_DEBUG)
+  parser_d.add_argument('-b', '--barcodeFile', action='store', nargs='?', help='Tab-delimited file, first column is barcode, second column is sample name', required=NOT_DEBUG)
 
   # create the parser for the "bam2dinucleotide" command
   parser_p = subparsers.add_parser('bam2dinucleotide')
