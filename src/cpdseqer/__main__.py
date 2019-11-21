@@ -70,7 +70,7 @@ def main():
   parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide file', required=NOT_DEBUG)
   parser_s.add_argument('-c', '--coordinate_files', action='store', nargs='?', help='Input coordinate files', required=NOT_DEBUG)
   parser_s.add_argument('-n', '--coordinate_names', action='store', nargs='?', default="", help='Input coordinate names')
-  parser_s.add_argument('-s', '--space', action='store_true', nargs='?', help='Use space rather than tab in coordinate files')
+  parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', default="-", help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv)==1:
