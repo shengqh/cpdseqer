@@ -153,7 +153,7 @@ def remove_chr(chrom):
     result = chrom
   return(result)
   
-def statistic(logger, dinucleotideFile, outputFile, coordinateFiles, coordinateFileNames = [], useSpace):
+def statistic(logger, dinucleotideFile, outputFile, coordinateFiles, coordinateFileNames = [], useSpace=False):
   coordinates = []
   hasName = len(coordinateFileNames) == len(coordinateFiles)
   delimit = ' ' if useSpace else '\t'
