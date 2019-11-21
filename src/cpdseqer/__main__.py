@@ -68,7 +68,7 @@ def main():
   # create the parser for the "statistic" command
   parser_s = subparsers.add_parser('statistic')
   parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide file', required=NOT_DEBUG)
-  parser_s.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate file', required=NOT_DEBUG)
+  parser_s.add_argument('-c', '--coordinate_files', action='store', nargs='?', help='Input coordinate files', required=NOT_DEBUG)
   parser_s.add_argument('-o', '--output', action='store', nargs='?', default="-", help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv)==1:
@@ -85,7 +85,7 @@ def main():
     bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file)
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
-    statistic(logger, args.input, args.output, args.coordinate_file)
+    statistic(logger, args.input, args.output, args.coordinate_files.split(","))
   
 if __name__ == "__main__":
     main()
