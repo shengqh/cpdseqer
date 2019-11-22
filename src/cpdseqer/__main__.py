@@ -70,6 +70,7 @@ def main():
   parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_s.add_argument('-c', '--coordinate_list_file', action='store', nargs='?', help='Input coordinate list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
+  parser_s.add_argument('--category_index', action='store', default=-1, help='Zero-based category column index in coordinate file')
   parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', default="-", help="Output file name", required=NOT_DEBUG)
   
