@@ -107,7 +107,7 @@ optional arguments:
 for example:
 
 ```
-cpdseqer statistic --category_index 6 -i cpd__fileList1.list -c cpd__fileList2.list -o cpd.dinucleotide.statistic.tsv
+cpdseqer statistic --category_index 3 -i cpd__fileList1.list -c cpd__fileList2.list -o cpd.dinucleotide.statistic.tsv
 ```
 
 cpd__fileList1.list (separated by tab)
