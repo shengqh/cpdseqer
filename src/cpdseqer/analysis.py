@@ -172,7 +172,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         catName = parts[category_index] if (category_index != -1 and category_index < len(parts)) else defCatName
         coordinates.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
         
-  catNames = sorted(list(set([ci.catName for ci in coordinates])))
+  catNames = sorted(list(set([ci.category for ci in coordinates])))
 
   finalMap = {dinuName:{catName:{} for catName in catNames} for dinuName in dinucleotideFileMap.keys()}
   
