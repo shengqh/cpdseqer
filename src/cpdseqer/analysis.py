@@ -171,14 +171,14 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         chrom = "chr" + parts[0] if addChr else parts[0] 
         catName = parts[category_index] if (category_index != -1 and category_index < len(parts)) else defCatName
         coordinates.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
+        
+  catNames = sorted(list(set([ci.catName for ci in coordinates])))
 
-  finalMap = {dinuName:{catName:{} for catName in coordinateFileMap.keys()} for dinuName in dinucleotideFileMap.keys()}
+  finalMap = {dinuName:{catName:{} for catName in catNames} for dinuName in dinucleotideFileMap.keys()}
   
   for dinuName in dinucleotideFileMap.keys(): 
     dinucleotideFile = dinucleotideFileMap[dinuName]           
     logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
-    
-    catDinucleotideMap = finalMap[dinuName]
     
     count = 0
     tb = tabix.open(dinucleotideFile)
@@ -197,6 +197,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         else:
           catItem.dinucleotide_count_map[dinucleotide] = 1
     
+    catDinucleotideMap = finalMap[dinuName]
     for ci in coordinates:
       dinucleotideMap = catDinucleotideMap[ci.category]
       for k in ci.dinucleotide_count_map.keys():
@@ -208,7 +209,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   with open(outputFile, "wt") as fout:
     fout.write("Sample\tCategory\tDinucleotide\tCount\n")
     for dinuName in sorted( dinucleotideFileMap.keys() ):      
-      for catName in sorted(catDinucleotideMap.keys()):
+      for catName in catNames:
         dinucleotideMap = finalMap[dinuName][catName]
         for k in sorted(dinucleotideMap.keys()):
           if not 'N' in k:
