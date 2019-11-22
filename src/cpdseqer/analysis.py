@@ -153,7 +153,7 @@ def remove_chr(chrom):
     result = chrom
   return(result)
   
-def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, category_index = -1, useSpace=False, addChr=False):
+def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, category_index=-1, useSpace=False, addChr=False):
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
   coordinateFileMap = readFileMap(coordinateFileList)
 

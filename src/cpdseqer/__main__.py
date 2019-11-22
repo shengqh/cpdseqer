@@ -88,7 +88,7 @@ def main():
     bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file)
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
-    statistic(logger, args.input, args.output, args.coordinate_list_file, args.space, args.add_chr)
+    statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
   
 if __name__ == "__main__":
     main()
