@@ -156,6 +156,8 @@ def remove_chr(chrom):
 def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, category_index=-1, useSpace=False, addChr=False):
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
   coordinateFileMap = readFileMap(coordinateFileList)
+  
+  logger.info("category_index=%d\nuseSpace=%s\naddChr=%s\n" % (category_index, str(useSpace), str(addChr)) 
 
   coordinates = []
   delimit = ' ' if useSpace else '\t'
