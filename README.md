@@ -38,7 +38,7 @@ for example:
 cpdseqer demultiplex -i sample.fastq.gz -o . -b barcode.txt
 ```
 
-barcode.txt (separated by tab)
+Example of [barcode.txt](https://github.com/shengqh/cpdseqer/raw/master/data/barcode.txt), columns are separated by tab
 ```
 ATCGCGAT        Control
 GAACTGAT        UV
@@ -77,7 +77,10 @@ optional arguments:
 for example:
 
 ```
-cpdseqer bam2dinucleotide -i Control.bam -g hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome.fa -o Control.dinucleotide.bed.bgz
+cpdseqer bam2dinucleotide \
+  -i Control.bam \
+  -g hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome.fa \
+  -o Control.dinucleotide.bed.bgz
 ```
 
 ### Get statistic based on bed file
@@ -107,35 +110,39 @@ optional arguments:
 for example:
 
 ```
-cpdseqer statistic --category_index 3 -i cpd__fileList1.list -c cpd__fileList2.list -o cpd.dinucleotide.statistic.tsv
+cpdseqer statistic --category_index 3 \
+  -i cpd__fileList1.list \
+  -c cpd__fileList2.list \
+  -o cpd.dinucleotide.statistic.tsv
 ```
 
 cpd__fileList1.list (separated by tab)
 
 ```
-/scratch/dinucleotide/Control.dinucleotide.bed.bgz      Control
-/scratch/dinucleotide/UV.dinucleotide.bed.bgz           UV
+Control.dinucleotide.bed.bgz      Control
+UV.dinucleotide.bed.bgz           UV
 ```
 
 cpd__fileList2.list (separated by tab)
 
 ```
-/scratch/hg38_promoter.bed      Promoter
-/scratch/hg38_tf.bed            TFBinding
+hg38_promoter.bed      Promoter
+hg38_tf.bed            TFBinding
 ```
 
+You can download [hg38_promoter.bed](https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed) and [hg38_tf.bed](https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed). The hg38_promoter.bed contains three columns only. So, Promoter (from  cpd__fileList2.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
 
-# running cpdseqer using singularity
+# Running cpdseqer using singularity
 
 We also build docker container for cpdseqer which can be used by singularity.
 
-## running directly
+### Running directly
 
 ```
 singularity exec -e docker://shengqh/cpdseqer cpdseqer -h
 ```
 
-## convert docker image to singularity image first
+### Convert docker image to singularity image first
 
 ```
 singularity build cpdseqer.simg docker://shengqh/cpdseqer
