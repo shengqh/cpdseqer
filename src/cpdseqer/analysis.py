@@ -157,7 +157,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
   coordinateFileMap = readFileMap(coordinateFileList)
   
-  logger.info("category_index=%d\nuseSpace=%s\naddChr=%s\n" % (category_index, str(useSpace), str(addChr))) 
+  logger.info("category_index=%d; useSpace=%s; addChr=%s\n" % (category_index, str(useSpace), str(addChr))) 
 
   coordinates = []
   delimit = ' ' if useSpace else '\t'
