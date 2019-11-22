@@ -157,7 +157,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
   coordinateFileMap = readFileMap(coordinateFileList)
   
-  logger.info("category_index=%d; useSpace=%s; addChr=%s\n" % (category_index, str(useSpace), str(addChr))) 
+  logger.info("category_index=%d; useSpace=%s; addChr=%s" % (category_index, str(useSpace), str(addChr))) 
 
   coordinates = []
   delimit = ' ' if useSpace else '\t'
@@ -168,9 +168,12 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
     with open(coordinateFile, "rt") as fin:
       for line in fin:
         parts = line.rstrip().split(delimit)
+        #print(parts)
         chrom = "chr" + parts[0] if addChr else parts[0] 
         catName = parts[category_index] if (category_index != -1 and category_index < len(parts)) else defCatName
+        #print(catName)
         coordinates.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
+        #break
         
   catNames = sorted(list(set([ci.category for ci in coordinates])))
 
