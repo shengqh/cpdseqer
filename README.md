@@ -1,8 +1,8 @@
-# cpdseqer
+# CPDSeqer
 
 This package is used to do CPD sequence data analysis.
 
-# installation
+# Installation
 
 Install python main package
 
@@ -16,7 +16,7 @@ Install tabix
 apt-get install -y tabix
 ```
 
-# usage
+# Usage
 
 ### Demultiplex fastq file
 
@@ -47,10 +47,14 @@ GAACTGAT        UV
 ### Align reads to genome using bowtie2
 
 ```
-bowtie2 -p 8  -x hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome -U Control.fastq.gz --sam-R
-G ID:Control --sam-RG LB:Control --sam-RG SM:Control --sam-RG PL:ILLUMINA -S Control.sam 2> Control.log
+bowtie2 -p 8  -x hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome -U Control.fastq.gz \
+  --sam-RG ID:Control --sam-RG LB:Control --sam-RG SM:Control --sam-RG PL:ILLUMINA \
+  -S Control.sam 2> Control.log
+  
 samtools view -Shu -F 256 Control.sam | samtools sort -o Control.bam -T Control -
+
 samtools index Control.bam
+
 rm Control.sam
 ```
 
