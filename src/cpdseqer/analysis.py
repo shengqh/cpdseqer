@@ -209,5 +209,5 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, useS
         dinucleotideMap = finalMap[dinuName][catName]
         for k in sorted(dinucleotideMap.keys()):
           if not 'N' in k:
-            fout.write("%s\t%s\t%d\n" % (catName, k, dinucleotideMap[k]))       
+            fout.write("%s\t%s\t%s\t%d\n" % (dinuName, catName, k, dinucleotideMap[k]))       
   
