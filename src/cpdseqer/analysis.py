@@ -62,7 +62,13 @@ def demultiplex(logger, inputFile, outputFolder, configFile, args):
   
   logger.info("reading input file: " + inputFile + " ...")
   count = 0
-  with open(inputFile, "r") as fin:
+  
+  if inputFile.endswith(".gz"):
+    fin = gzip.open(inputFile, 'rt')
+  else:
+    fin = open(inputFile, "rt")
+
+  with fin:
     while(True):
       query = fin.readline()
       if not query:
