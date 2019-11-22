@@ -153,60 +153,61 @@ def remove_chr(chrom):
     result = chrom
   return(result)
   
-def statistic(logger, dinucleotideFile, outputFile, coordinateFiles, coordinateFileNames = [], useSpace=False, addChr=False):
+def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, useSpace=False, addChr=False):
+  dinucleotideFileMap = readFileMap(dinucleotideFileList)
+  coordinateFileMap = readFileMap(coordinateFileList)
+
   coordinates = []
-  hasName = len(coordinateFileNames) == len(coordinateFiles)
   delimit = ' ' if useSpace else '\t'
-  for idx in range(0, len(coordinateFiles)):
-    coordinateFile = coordinateFiles[idx]
+  for catName in coordinateFileMap.keys():
+    coordinateFile = coordinateFileMap[catName]
     logger.info("Reading category file " + coordinateFile + " ...")
-    if not hasName:
-      defaultCat = os.path.splitext(os.path.basename(coordinateFile))[0]
-    else:
-      defaultCat = coordinateFileNames[idx]
       
     with open(coordinateFile, "rt") as fin:
       for line in fin:
         parts = line.rstrip().split(delimit)
         chrom = "chr" + parts[0] if addChr else parts[0] 
-        catName = defaultCat if hasName else parts[3] if len(parts) >= 4 else defaultCat
         coordinates.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
-        
-  logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
 
-  count = 0
-  tb = tabix.open(dinucleotideFile)
-  for catItem in coordinates:
-    count = count + 1
-    if count % 10000 == 0:
-      logger.info("%d / %d" % (count, len(coordinates)))
-    
-    #logger.info("Processing %s:%d-%d ..." %(catItem.reference_name, catItem.reference_start, catItem.reference_end))
-    tbiter = tb.query(catItem.reference_name, catItem.reference_start, catItem.reference_end)
-    records = [record for record in tbiter]
-    for record in records:
-      dinucleotide = record[3]
-      if dinucleotide in catItem.dinucleotide_count_map.keys():
-        catItem.dinucleotide_count_map[dinucleotide] = catItem.dinucleotide_count_map[dinucleotide] + 1
-      else:
-        catItem.dinucleotide_count_map[dinucleotide] = 1
+  finalMap = {dinuName:{catName:{} for catName in coordinateFileMap.keys()} for dinuName in dinucleotideFileMap.keys()}
   
-  catDinucleotideMap = {}
-  for ci in coordinates:
-    if not ci.category in catDinucleotideMap.keys():
-      catDinucleotideMap[ci.category] = {}
-    dinucleotideMap = catDinucleotideMap[ci.category]
-    for k in ci.dinucleotide_count_map.keys():
-      if k in dinucleotideMap.keys():
-        dinucleotideMap[k] = dinucleotideMap[k] + ci.dinucleotide_count_map[k]
-      else:
-        dinucleotideMap[k] = ci.dinucleotide_count_map[k]
+  for dinuName in dinucleotideFileMap.keys(): 
+    dinucleotideFile = dinucleotideFileMap[dinuName]           
+    logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
+    
+    catDinucleotideMap = finalMap[dinuName]
+    
+    count = 0
+    tb = tabix.open(dinucleotideFile)
+    for catItem in coordinates:
+      count = count + 1
+      if count % 10000 == 0:
+        logger.info("%d / %d" % (count, len(coordinates)))
+      
+      #logger.info("Processing %s:%d-%d ..." %(catItem.reference_name, catItem.reference_start, catItem.reference_end))
+      tbiter = tb.query(catItem.reference_name, catItem.reference_start, catItem.reference_end)
+      records = [record for record in tbiter]
+      for record in records:
+        dinucleotide = record[3]
+        if dinucleotide in catItem.dinucleotide_count_map.keys():
+          catItem.dinucleotide_count_map[dinucleotide] = catItem.dinucleotide_count_map[dinucleotide] + 1
+        else:
+          catItem.dinucleotide_count_map[dinucleotide] = 1
+    
+    for ci in coordinates:
+      dinucleotideMap = catDinucleotideMap[ci.category]
+      for k in ci.dinucleotide_count_map.keys():
+        if k in dinucleotideMap.keys():
+          dinucleotideMap[k] = dinucleotideMap[k] + ci.dinucleotide_count_map[k]
+        else:
+          dinucleotideMap[k] = ci.dinucleotide_count_map[k]
   
   with open(outputFile, "wt") as fout:
-    fout.write("Category\tDinucleotide\tCount\n")       
-    for catName in sorted(catDinucleotideMap.keys()):
-      dinucleotideMap = catDinucleotideMap[catName]
-      for k in sorted(dinucleotideMap.keys()):
-        if not 'N' in k:
-          fout.write("%s\t%s\t%d\n" % (catName, k, dinucleotideMap[k]))       
+    fout.write("Sample\tCategory\tDinucleotide\tCount\n")
+    for dinuName in sorted( dinucleotideFileMap.keys() ):      
+      for catName in sorted(catDinucleotideMap.keys()):
+        dinucleotideMap = finalMap[dinuName][catName]
+        for k in sorted(dinucleotideMap.keys()):
+          if not 'N' in k:
+            fout.write("%s\t%s\t%d\n" % (catName, k, dinucleotideMap[k]))       
   
