@@ -187,6 +187,11 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   
   for dinuName in dinucleotideFileMap.keys(): 
     dinucleotideFile = dinucleotideFileMap[dinuName]           
+    idxFile = dinucleotideFile + ".tbi"
+
+    if not path.exists(idxFile):
+      sys.exit("Index file missed: " + idxFile)
+
     logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
     
     count = 0

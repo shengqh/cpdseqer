@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="cpdseqer",
-    version="0.0.2",
+    version="0.0.3",
     author="Quanhu Sheng",
     author_email="quanhu.sheng.1@vumc.org",
     description="CPDseq data analysis",
