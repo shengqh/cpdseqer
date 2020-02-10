@@ -1,7 +1,10 @@
 import gzip
 import pysam
 import os
+import os.path
+import errno
 import tabix
+import sys
 from collections import OrderedDict
 from Bio import SeqIO
 from Bio import bgzf
@@ -189,8 +192,8 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
     dinucleotideFile = dinucleotideFileMap[dinuName]           
     idxFile = dinucleotideFile + ".tbi"
 
-    if not path.exists(idxFile):
-      sys.exit("Index file missed: " + idxFile)
+    if not os.path.exists(idxFile):
+      raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), idxFile)
 
     logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
     
