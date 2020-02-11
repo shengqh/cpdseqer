@@ -47,7 +47,7 @@ GAACTGAT        UV
 ### Align reads to genome using bowtie2
 
 ```
-bowtie2 -p 8  -x hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome -U Control.fastq.gz \
+bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz \
   --sam-RG ID:Control --sam-RG LB:Control --sam-RG SM:Control --sam-RG PL:ILLUMINA \
   -S Control.sam 2> Control.log
   
@@ -56,6 +56,16 @@ samtools view -Shu -F 256 Control.sam | samtools sort -o Control.bam -T Control 
 samtools index Control.bam
 
 rm Control.sam
+```
+
+You can download hg38 bowtie2 index files:
+
+```
+mkdir hg38
+cd hg38
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/hg38_bowtie2.tar.gz
+tar -xzvf hg38_bowtie2.tar.gz
+cd ..
 ```
 
 ### Extract dinucleotide from bam file
