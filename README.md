@@ -83,6 +83,15 @@ cpdseqer bam2dinucleotide \
   -o Control.dinucleotide.bed.bgz
 ```
 
+You can download bam files:
+
+```
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bam
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bam.bai
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bam
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bam.bai
+```
+
 ### Get statistic based on bed file
 
 ```
@@ -130,7 +139,21 @@ hg38_promoter.bed      Promoter
 hg38_tf.bed            TFBinding
 ```
 
-You can download [hg38_promoter.bed](https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed) and [hg38_tf.bed](https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed). The hg38_promoter.bed contains three columns only. So, Promoter (from  cpd__fileList2.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
+You can download example files as following scripts. The hg38_promoter.bed contains three columns only. So, Promoter (from  cpd__fileList2.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
+
+```
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.dinucleotide.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.dinucleotide.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.dinucleotide.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.dinucleotide.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/cpd__fileList1.list
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/cpd__fileList2.list
+wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
+wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
+
+
+```
+
 
 # Running cpdseqer using singularity
 
