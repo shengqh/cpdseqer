@@ -35,6 +35,10 @@ class CategoryItem:
       return(0)
     return(-1)
 
+def check_file_exists(file):
+  if not os.path.exists(file):
+    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
+
 def get_reference_start(elem):
     return elem.reference_start
 
@@ -43,6 +47,8 @@ def runCmd(cmd, logger):
   os.system(cmd)
 
 def readFileMap(fileName):
+  check_file_exists(fileName)
+
   result = {}
   with open(fileName) as fh:
     for line in fh:
@@ -51,6 +57,8 @@ def readFileMap(fileName):
   return(result)
  
 def demultiplex(logger, inputFile, outputFolder, configFile, args):
+  check_file_exists(inputFile)
+
   logger.info("reading barcode file: " + configFile + " ...")
   sampleSeqMap = readFileMap(configFile)
   seqSampleMap = {sampleSeqMap[k]:k for k in sampleSeqMap.keys()}
@@ -101,6 +109,9 @@ def demultiplex(logger, inputFile, outputFolder, configFile, args):
   logger.info("demultiplex done.")
 
 def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile):
+  check_file_exists(bamFile)
+  check_file_exists(genomeFastaFile)
+
   dinuItems = []
   count = 0
   with pysam.AlignmentFile(bamFile, "rb") as sf:
@@ -163,6 +174,9 @@ def remove_chr(chrom):
   return(result)
   
 def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, category_index=-1, useSpace=False, addChr=False):
+  check_file_exists(dinucleotideFileList)
+  check_file_exists(coordinateFileList)
+
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
   coordinateFileMap = readFileMap(coordinateFileList)
   
@@ -172,6 +186,9 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   delimit = ' ' if useSpace else '\t'
   for defCatName in coordinateFileMap.keys():
     coordinateFile = coordinateFileMap[defCatName]
+
+    check_file_exists(coordinateFile)
+    
     logger.info("Reading category file " + coordinateFile + " ...")
       
     with open(coordinateFile, "rt") as fin:
@@ -191,6 +208,9 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   for dinuName in dinucleotideFileMap.keys(): 
     dinucleotideFile = dinucleotideFileMap[dinuName]           
     idxFile = dinucleotideFile + ".tbi"
+
+    check_file_exists(dinucleotideFile)
+    check_file_exists(idxFile)
 
     if not os.path.exists(idxFile):
       raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), idxFile)
