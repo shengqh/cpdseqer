@@ -164,7 +164,6 @@ wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 
 ```
 
-
 # Running cpdseqer using singularity
 
 We also build docker container for cpdseqer which can be used by singularity.
@@ -172,6 +171,7 @@ We also build docker container for cpdseqer which can be used by singularity.
 ### Running directly
 
 ```
+singularity exec -e docker://shengqh/cpdseqer bowtie2 -h
 singularity exec -e docker://shengqh/cpdseqer cpdseqer -h
 ```
 
@@ -179,5 +179,6 @@ singularity exec -e docker://shengqh/cpdseqer cpdseqer -h
 
 ```
 singularity build cpdseqer.simg docker://shengqh/cpdseqer
+singularity exec -e cpdseqer.simg bowtie2 -h
 singularity exec -e cpdseqer.simg cpdseqer -h
 ```
