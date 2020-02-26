@@ -71,8 +71,8 @@ cd ..
 ### Extract dinucleotide from bam file
 
 ```
-usage: cpdseqer bam2dinucleotide [-h] -i [INPUT] -g [GENOME_SEQ_FILE] -o
-                                 [OUTPUT]
+usage: cpdseqer bam2dinucleotide [-h] -i [INPUT] -g [GENOME_SEQ_FILE]
+                                 [-q [MAPPING_QUALITY]] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -80,6 +80,8 @@ optional arguments:
                         Input BAM file
   -g [GENOME_SEQ_FILE], --genome_seq_file [GENOME_SEQ_FILE]
                         Input genome seq file
+  -q [MAPPING_QUALITY], --mapping_quality [MAPPING_QUALITY]
+                        Minimum mapping quality of read (default 20)
   -o [OUTPUT], --output [OUTPUT]
                         Output file name
 ```

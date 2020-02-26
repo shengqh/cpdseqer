@@ -63,16 +63,16 @@ def main():
   parser_p = subparsers.add_parser('bam2dinucleotide')
   parser_p.add_argument('-i', '--input', action='store', nargs='?', help='Input BAM file', required=NOT_DEBUG)
   parser_p.add_argument('-g', '--genome_seq_file', action='store', nargs='?', help='Input genome seq file', required=NOT_DEBUG)
-  parser_p.add_argument('-q', '--mapping_quality', action='store', default=20, nargs='?', help='Minimum mapping quality of read', required=False)
+  parser_p.add_argument('-q', '--mapping_quality', type=int, default=20, nargs='?', help='Minimum mapping quality of read (default 20)', required=False)
   parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "statistic" command
   parser_s = subparsers.add_parser('statistic')
   parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_s.add_argument('-c', '--coordinate_list_file', action='store', nargs='?', help='Input coordinate list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
-  parser_s.add_argument('--category_index', type=int, default=-1, help='Zero-based category column index in coordinate file')
-  parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
+  parser_s.add_argument('-s', '--space', action='store_true', nargs='?', help='Use space rather than tab in coordinate files')
+  parser_s.add_argument('--category_index', type=int, default=-1, nargs='?', help='Zero-based category column index in coordinate file')
+  parser_s.add_argument('--add_chr', action='store_true', nargs='?', help='Add chr in chromosome name in coordinate file')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv)==1:
