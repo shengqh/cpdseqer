@@ -137,7 +137,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
   for di in dinuItems:
     chrDinuMap.setdefault(di.reference_name, []).append(di)
   
-  for chr in sorted(chrDinuMap.keys()):
+  for chr in chrDinuMap.keys():
     logger.info("sort dinucleotides of chromosome %s..." % chr  )
     values = chrDinuMap[chr]
     values.sort(key=get_reference_start)
@@ -176,7 +176,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
                 dinu = str(Seq(dinu).reverse_complement())
               di.dinucleotide = dinu
   
-  countMap = {}
+  countMap = OrderedDict()
   logger.info("Writing dinucleotide to " + outputFile + " ...")
   with bgzf.BgzfWriter(outputFile, "wb") as fout:
     for chrom in chrDinuMap.keys():
