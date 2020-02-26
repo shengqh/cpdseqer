@@ -138,10 +138,10 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
     chrDinuMap.setdefault(di.reference_name, []).append(di)
   
   for chr in chrDinuMap.keys():
-    logger.info("sort dinucleotides of chromosome %s..." % chr  )
     values = chrDinuMap[chr]
+    logger.info("sort %d dinucleotides of chromosome %s..." % (len(values), chr ))
     values.sort(key=get_reference_start)
-    logger.info("combine dinucleotides of chromosome %s..." % chr )
+    logger.info("combine %d dinucleotides of chromosome %s..." % (len(values), chr ) )
     idx = len(values) - 1
     deleteList = set()
     while(idx > 0):
@@ -158,6 +158,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
         prev = prev - 1
       idx = idx -1
     chrDinuMap[chr] = [i for j, i in enumerate(values) if j not in deleteList]
+    logger.info("after combine, there is %d dinucleotides of chromosome %s..." % (len(chrDinuMap[chr]), chr ) )
 
   with open(genomeFastaFile, "rt") as fin:  
     for record in SeqIO.parse(fin,'fasta'):
