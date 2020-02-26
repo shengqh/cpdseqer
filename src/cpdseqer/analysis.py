@@ -174,18 +174,24 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
                 dinu = str(Seq(dinu).reverse_complement())
               di.dinucleotide = dinu
   
-  totalCount = 0
+  countMap = {}
   logger.info("Writing dinucleotide to " + outputFile + " ...")
   with bgzf.BgzfWriter(outputFile, "wb") as fout:
     for chrom in chrDinuMap.keys():
       diList = chrDinuMap[chrom]
+      chromMap = {}
       for s in diList:
         if (s.dinucleotide != "") and (not 'N' in s.dinucleotide):
-          totalCount = totalCount + s.count
+          chromMap[s.dinucleotide] = chromMap.setdefault(s.dinucleotide, 0) + s.count
           fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
+      countMap[chrom] = chromMap
   
   with open(outputFile + ".count", "wt") as fout:
-    fout.write("ToalCount\t%d\n" % totalCount)
+    fout.write("Chromosome\tDinucleotide\tCount\n")
+    for chrom in countMap.keys():
+      chromMap = countMap[chrom]
+      for dinucleotide in chromMap.keys():
+        fout.write("%s\t%s\t%d\n" % (chrom, dinucleotide, chromMap[dinucleotide])
 
   runCmd("tabix -p bed %s " % outputFile, logger)
   logger.info("done.")
