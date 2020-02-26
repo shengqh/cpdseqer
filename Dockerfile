@@ -17,6 +17,6 @@ RUN pip3 install --no-cache-dir --upgrade \
 
 RUN apt-get install -y tabix
     
-ENV CPDSEQER_VERSION="0.1.0"
+ENV CPDSEQER_VERSION="0.1.1"
 RUN pip3 install git+git://github.com/shengqh/cpdseqer.git
 RUN cpdseqer -h
