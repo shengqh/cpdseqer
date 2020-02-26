@@ -18,7 +18,8 @@ class DinucleotideItem:
     self.query_name = query_name
     self.mapping_quality = mapping_quality
     self.strand = strand
-    self.dinucleotide = dinucleotide;
+    self.dinucleotide = dinucleotide
+    self.count = 1
 
 class CategoryItem:
   def __init__(self, reference_name, reference_start, reference_end, category ):
@@ -108,7 +109,7 @@ def demultiplex(logger, inputFile, outputFolder, configFile, args):
   
   logger.info("demultiplex done.")
 
-def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile):
+def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQuality=20):
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
@@ -122,11 +123,14 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile):
         
       if s.is_unmapped:
         continue
+
+      if s.mapping_quality < mappingQuality:
+        continue
         
       if s.is_reverse:
-        dinuItems.append(DinucleotideItem(s.reference_name, s.reference_end, s.reference_end + 2, s.query_name, s.mapping_quality, "-" if s.is_reverse else "+", "" ))
+        dinuItems.append(DinucleotideItem(s.reference_name, s.reference_end, s.reference_end + 2, s.query_name, s.mapping_quality, "-", "" ))
       else:
-        dinuItems.append(DinucleotideItem(s.reference_name, s.reference_start - 2, s.reference_start, s.query_name, s.mapping_quality, "-" if s.is_reverse else "+", "" ))
+        dinuItems.append(DinucleotideItem(s.reference_name, s.reference_start - 2, s.reference_start, s.query_name, s.mapping_quality, "+", "" ))
   
   chrDinuMap = OrderedDict()
   for di in dinuItems:
@@ -134,7 +138,21 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile):
   
   for values in chrDinuMap.values():
     values.sort(key=get_reference_start)
-    
+    idx = len(values) - 1
+    while(idx > 0):
+      curDinu = values[idx]
+      prev = idx -1
+      while(prev >= 0):
+        prevDinu = values[prev]
+        if curDinu.reference_start != prevDinu.reference_start:
+          break
+        if curDinu.strand == prevDinu.strand:
+          prevDinu.count = prevDinu.count + curDinu.count
+          del values[idx]
+          break
+        prev = prev - 1
+      idx = idx -1
+
   with open(genomeFastaFile, "rt") as fin:  
     for record in SeqIO.parse(fin,'fasta'):
       id = record.id
@@ -152,14 +170,19 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile):
                 dinu = str(Seq(dinu).reverse_complement())
               di.dinucleotide = dinu
   
+  totalCount = 0
   logger.info("Writing dinucleotide to " + outputFile + " ...")
   with bgzf.BgzfWriter(outputFile, "wb") as fout:
     for chrom in chrDinuMap.keys():
       diList = chrDinuMap[chrom]
       for s in diList:
-        if s.dinucleotide != "":
-          fout.write("%s\t%d\t%d\t%s\t0\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.strand))
+        if (s.dinucleotide != "") and (not 'N' in s.dinucleotide):
+          totalCount = totalCount + s.count
+          fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
   
+  with open(outputFile + ".count", "rt") as fout:
+    fout.write("ToalCount\t%d\n" % totalCount)
+
   runCmd("tabix -p bed %s " % outputFile, logger)
   logger.info("done.")
   
@@ -212,9 +235,6 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
     check_file_exists(dinucleotideFile)
     check_file_exists(idxFile)
 
-    if not os.path.exists(idxFile):
-      raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), idxFile)
-
     logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
     
     count = 0
@@ -229,10 +249,13 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
       records = [record for record in tbiter]
       for record in records:
         dinucleotide = record[3]
+        count = int(record[4])
+        if count == 0:
+          count = 1
         if dinucleotide in catItem.dinucleotide_count_map.keys():
-          catItem.dinucleotide_count_map[dinucleotide] = catItem.dinucleotide_count_map[dinucleotide] + 1
+          catItem.dinucleotide_count_map[dinucleotide] = catItem.dinucleotide_count_map[dinucleotide] + count
         else:
-          catItem.dinucleotide_count_map[dinucleotide] = 1
+          catItem.dinucleotide_count_map[dinucleotide] = count
     
     catDinucleotideMap = finalMap[dinuName]
     for ci in coordinates:
@@ -249,6 +272,5 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
       for catName in catNames:
         dinucleotideMap = finalMap[dinuName][catName]
         for k in sorted(dinucleotideMap.keys()):
-          if not 'N' in k:
-            fout.write("%s\t%s\t%s\t%d\n" % (dinuName, catName, k, dinucleotideMap[k]))       
+          fout.write("%s\t%s\t%s\t%d\n" % (dinuName, catName, k, dinucleotideMap[k]))       
   

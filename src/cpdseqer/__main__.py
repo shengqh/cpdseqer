@@ -63,6 +63,7 @@ def main():
   parser_p = subparsers.add_parser('bam2dinucleotide')
   parser_p.add_argument('-i', '--input', action='store', nargs='?', help='Input BAM file', required=NOT_DEBUG)
   parser_p.add_argument('-g', '--genome_seq_file', action='store', nargs='?', help='Input genome seq file', required=NOT_DEBUG)
+  parser_p.add_argument('-q', '--mapping_quality', action='store', default=20, nargs='?', help='Minimum mapping quality of read', required=NOT_DEBUG)
   parser_p.add_argument('-o', '--output', action='store', nargs='?', default="-", help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "statistic" command
@@ -85,7 +86,7 @@ def main():
     demultiplex(logger, args.input, args.output, args.barcodeFile, args)
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
-    bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file)
+    bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file, args.mapping_quality)
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
