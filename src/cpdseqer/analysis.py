@@ -180,7 +180,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
           totalCount = totalCount + s.count
           fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
   
-  with open(outputFile + ".count", "rt") as fout:
+  with open(outputFile + ".count", "wt") as fout:
     fout.write("ToalCount\t%d\n" % totalCount)
 
   runCmd("tabix -p bed %s " % outputFile, logger)

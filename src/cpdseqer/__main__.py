@@ -80,9 +80,10 @@ def main():
     sys.exit(1)
 
   args = parser.parse_args()
+  print(args)
   
   if args.command == "demultiplex":
-    logger = initialize_logger(args.output + "/cpdseqer.log", args)
+    logger = initialize_logger(args.output + "/demultiplex.log", args)
     demultiplex(logger, args.input, args.output, args.barcodeFile, args)
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
