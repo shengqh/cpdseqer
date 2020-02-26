@@ -138,10 +138,10 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
     chrDinuMap.setdefault(di.reference_name, []).append(di)
   
   for chr in sorted(chrDinuMap.keys()):
-    logger.info("sort dinucleotides of chromosome %s..."  )
+    logger.info("sort dinucleotides of chromosome %s..." % chr  )
     values = chrDinuMap[chr]
     values.sort(key=get_reference_start)
-    logger.info("combine dinucleotides of chromosome %s..."  )
+    logger.info("combine dinucleotides of chromosome %s..." % chr )
     idx = len(values) - 1
     while(idx > 0):
       curDinu = values[idx]
