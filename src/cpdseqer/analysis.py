@@ -193,7 +193,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
     for chrom in countMap.keys():
       chromMap = countMap[chrom]
       for dinucleotide in chromMap.keys():
-        fout.write("%s\t%s\t%d\n" % (chrom, dinucleotide, chromMap[dinucleotide])
+        fout.write("%s\t%s\t%d\n" % (chrom, dinucleotide, chromMap[dinucleotide]))
 
   runCmd("tabix -p bed %s " % outputFile, logger)
   logger.info("done.")
