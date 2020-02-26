@@ -113,6 +113,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
+  logger.info("reading bam file %s ..." % bamFile )
   dinuItems = []
   count = 0
   with pysam.AlignmentFile(bamFile, "rb") as sf:
@@ -136,8 +137,11 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
   for di in dinuItems:
     chrDinuMap.setdefault(di.reference_name, []).append(di)
   
-  for values in chrDinuMap.values():
+  for chr in sorted(chrDinuMap.keys()):
+    logger.info("sort dinucleotides of chromosome %s..."  )
+    values = chrDinuMap[chr]
     values.sort(key=get_reference_start)
+    logger.info("combine dinucleotides of chromosome %s..."  )
     idx = len(values) - 1
     while(idx > 0):
       curDinu = values[idx]
