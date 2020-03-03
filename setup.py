@@ -1,24 +1,31 @@
 import setuptools
 import re
 import os
+import codecs
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+here = os.path.abspath(os.path.dirname(__file__))
+
+def read(*parts):
+    with codecs.open(os.path.join(here, *parts), 'r') as fp:
+        return fp.read()
+
+def find_version(*file_paths):
+    version_file = read(*file_paths)
+    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
+                              version_file, re.M)
+    if version_match:
+        return version_match.group(1)
+    raise RuntimeError("Unable to find version string.")
+
 PKG = "cpdseqer"
-VERSIONFILE = os.path.join(PKG, "__version__.py")
-verstrline = open(VERSIONFILE, "rt").read()
-VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VSRE, verstrline, re.M)
-if mo:
-    verstr = mo.group(1)
-else:
-    print ("unable to find version in %s" % VERSIONFILE)
-    raise RuntimeError("if %s exists, it is required to be well-formed" % VERSIONFILE)
+version=find_version(PKG, "__version__.py")
 
 setuptools.setup(
     name=PKG,
-    version=verstr,
+    version=version,
     author="Quanhu Sheng",
     author_email="quanhu.sheng.1@vumc.org",
     description="CPDseq data analysis",
