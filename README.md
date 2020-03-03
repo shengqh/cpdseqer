@@ -2,6 +2,14 @@
 
 This package is used to do CPD sequence data analysis.
 
+# Prerequisites
+
+Install tabix
+
+```
+apt-get install -y tabix
+```
+
 # Installation
 
 Install python main package
@@ -10,15 +18,9 @@ Install python main package
 pip install git+git://github.com/shengqh/cpdseqer.git
 ```
 
-Install tabix
-
-```
-apt-get install -y tabix
-```
-
 # Usage
 
-### Demultiplex fastq file
+## Demultiplex fastq file
 
 ```
 usage: cpdseqer demultiplex [-h] -i [INPUT] -o [OUTPUT] -b [BARCODEFILE]
@@ -44,7 +46,7 @@ ATCGCGAT        Control
 GAACTGAT        UV
 ```
 
-### Align reads to genome using bowtie2
+## Align reads to genome using bowtie2
 
 ```
 bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz \
@@ -68,7 +70,7 @@ tar -xzvf hg38_bowtie2.tar.gz
 cd ..
 ```
 
-### Extract dinucleotide from bam file
+## Extract dinucleotide from bam file
 
 ```
 usage: cpdseqer bam2dinucleotide [-h] -i [INPUT] -g [GENOME_SEQ_FILE]
@@ -104,7 +106,7 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bam
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bam.bai
 ```
 
-### Get statistic based on bed file
+## Get statistic based on bed file
 
 ```
 usage: cpdseqer statistic [-h] -i [INPUT] -c [COORDINATE_LIST_FILE] [-s]
@@ -170,14 +172,14 @@ wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 
 We also build docker container for cpdseqer which can be used by singularity.
 
-### Running directly
+## Running directly
 
 ```
 singularity exec -e docker://shengqh/cpdseqer bowtie2 -h
 singularity exec -e docker://shengqh/cpdseqer cpdseqer -h
 ```
 
-### Convert docker image to singularity image first
+## Convert docker image to singularity image first
 
 ```
 singularity build cpdseqer.simg docker://shengqh/cpdseqer
