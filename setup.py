@@ -1,11 +1,24 @@
 import setuptools
+import re
+import os
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
+PKG = "cpdseqer"
+VERSIONFILE = os.path.join(PKG, "__version__.py")
+verstrline = open(VERSIONFILE, "rt").read()
+VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VSRE, verstrline, re.M)
+if mo:
+    verstr = mo.group(1)
+else:
+    print ("unable to find version in %s" % VERSIONFILE)
+    raise RuntimeError("if %s exists, it is required to be well-formed" % VERSIONFILE)
+
 setuptools.setup(
-    name="cpdseqer",
-    version="0.1.2",
+    name=PKG,
+    version=verstr,
     author="Quanhu Sheng",
     author_email="quanhu.sheng.1@vumc.org",
     description="CPDseq data analysis",

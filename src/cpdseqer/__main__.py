@@ -4,6 +4,7 @@ import logging
 import os
 
 from cpdseqer.analysis import demultiplex, bam2dinucleotide, statistic
+from cpdseqer.__version__ import __version__
 
 def initialize_logger(logfile, args):
   logger = logging.getLogger('cpdseqer')
@@ -45,7 +46,7 @@ def runCommand(command, logger):
 # associated with TC, CT, or CC dinucleotides, were analyzed.
 
 def main():
-  parser = argparse.ArgumentParser(description="CPDseq analysis",
+  parser = argparse.ArgumentParser(description="CPDseq analysis v" + __version__,
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   
   DEBUG = False
