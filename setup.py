@@ -3,7 +3,7 @@ import re
 import os
 import codecs
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -21,7 +21,8 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 PKG = "cpdseqer"
-version=find_version(PKG, "__version__.py")
+
+version = find_version(PKG, "__version__.py")
 
 setuptools.setup(
     name=PKG,
@@ -32,6 +33,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/shengqh/cpdseqer",
+    download_url="https://github.com/shengqh/cpdseqer/archive/v" + version + ".tar.gz",
     entry_points = {
         'console_scripts': ['cpdseqer=cpdseqer.__main__:main'],
     },
