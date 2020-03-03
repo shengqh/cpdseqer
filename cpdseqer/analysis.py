@@ -222,6 +222,9 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
   delimit = ' ' if useSpace else '\t'
   for defCatName in coordinateFileMap.keys():
     coordinateFile = coordinateFileMap[defCatName]
+    if (coordinateFile == 'hg38_promoter.bed') or (coordinateFile == 'hg38_tf.bed'):
+      if not os.path.exists(coordinateFile):
+        coordinateFile = os.path.join(os.path.dirname(__file__), coordinateFile)
 
     check_file_exists(coordinateFile)
     
