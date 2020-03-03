@@ -21,7 +21,7 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 PKG = "cpdseqer"
-version=find_version(PKG, "__version__.py")
+version=find_version("package", "__version__.py")
 
 setuptools.setup(
     name=PKG,
