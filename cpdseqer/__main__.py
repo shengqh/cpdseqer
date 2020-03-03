@@ -46,7 +46,7 @@ def runCommand(command, logger):
 # associated with TC, CT, or CC dinucleotides, were analyzed.
 
 def main():
-  parser = argparse.ArgumentParser(description="CPDseq analysis v" + __version__,
+  parser = argparse.ArgumentParser(description="CPDseq analysis " + __version__,
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   
   DEBUG = False

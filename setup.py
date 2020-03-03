@@ -21,7 +21,7 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 PKG = "cpdseqer"
-version=find_version("package", "__version__.py")
+version=find_version(PKG, "__version__.py")
 
 setuptools.setup(
     name=PKG,
@@ -36,7 +36,7 @@ setuptools.setup(
         'console_scripts': ['cpdseqer=cpdseqer.__main__:main'],
     },
     packages=['cpdseqer'],
-    package_dir={'cpdseqer': 'src/cpdseqer'},
+    package_dir={'cpdseqer': 'cpdseqer'},
     install_requires=['argparse', 'pysam', 'pytabix', 'biopython' ],
     classifiers=[
         "Programming Language :: Python :: 3",
