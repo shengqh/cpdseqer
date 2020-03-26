@@ -56,6 +56,11 @@ def readFileMap(fileName):
       filepath, name = line.strip().split('\t', 1)
       result[name] = filepath.strip()
   return(result)
+
+def checkFileMap(fileMap):
+  for sname in fileMap.keys():
+    sfile = fileMap[sname]
+    check_file_exists(sfile)
  
 def demultiplex(logger, inputFile, outputFolder, configFile, args):
   check_file_exists(inputFile)
@@ -290,3 +295,21 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         for k in sorted(dinucleotideMap.keys()):
           fout.write("%s\t%s\t%s\t%d\n" % (dinuName, catName, k, dinucleotideMap[k]))       
   
+def report(logger, caseFileList, controlFileList, outputFile):
+  check_file_exists(caseFileList)
+  check_file_exists(controlFileList)
+
+  caseFileMap = readFileMap(caseFileList)
+  controlFileMap = readFileMap(controlFileList)
+
+  checkFileMap(caseFileMap)
+  chedkFileMap(controlFileMap)
+    
+  coordinates = []
+  delimit = ' ' if useSpace else '\t'
+  for defCatName in coordinateFileMap.keys():
+    coordinateFile = coordinateFileMap[defCatName]
+    if (coordinateFile == 'hg38_promoter.bed') or (coordinateFile == 'hg38_tf.bed'):
+      if not os.path.exists(coordinateFile):
+        coordinateFile = os.path.join(os.path.dirname(__file__), coordinateFile)
+

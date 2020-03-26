@@ -3,8 +3,8 @@ import sys
 import logging
 import os
 
-from cpdseqer.analysis import demultiplex, bam2dinucleotide, statistic
-from cpdseqer.__version__ import __version__
+from analysis import demultiplex, bam2dinucleotide, statistic, report
+from __version__ import __version__
 
 def initialize_logger(logfile, args):
   logger = logging.getLogger('cpdseqer')
@@ -30,7 +30,6 @@ def initialize_logger(logfile, args):
 def runCommand(command, logger):
   logger.info("run : " + command )
   os.system(command)
-
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
@@ -76,6 +75,12 @@ def main():
   parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
+  # create the parser for the "report" command
+  parser_r = subparsers.add_parser('report')
+  parser_r.add_argument('-s', '--sample_list_file', action='store', nargs='?', help='Input sample/case list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_r.add_argument('-c', '--control_list_file', action='store', nargs='?', help='Input control list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+  
   if not DEBUG and len(sys.argv)==1:
     parser.print_help()
     sys.exit(1)
@@ -92,6 +97,9 @@ def main():
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
+  elif args.command == "report":
+    logger = initialize_logger(args.output + ".log", args)
+    report(logger, args.sample_list_file, args.control_list_file, args.output)
   
 if __name__ == "__main__":
     main()

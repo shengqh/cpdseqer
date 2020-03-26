@@ -1,0 +1,252 @@
+---
+title: "CPDsequer Analysis Report"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r include=FALSE}
+
+## parameters
+hg19 = TRUE ## default
+hg38 = FALSE
+plot.pos = TRUE
+plot.mut = TRUE
+ctrl.default = FALSE
+
+library(knitr) ## kable
+library(data.table) ## fread
+library(dplyr)
+library(ggplot2)
+library(reshape2) ## acast
+
+list.case = list()
+list.ctrl = list()
+
+cases <- read.delim("listfile_case.txt", sep = '\t', header = F, stringsAsFactors = F)
+if(nrow(cases) == 0) stop
+for(i in 1:nrow(cases)){
+  caseName <- strsplit(cases$V1[i], "\\.")[[1]][1]
+  list.case[[caseName]] <- fread(cases$V1[i], sep = "\t", header = F, data.table = F)
+}
+
+if(!ctrl.default){
+  ctrls <- read.delim("listfile_ctrl.txt", sep = '\t', header = F, stringsAsFactors = F)
+  for(i in 1:nrow(ctrls)){
+    ctrlName <- strsplit(ctrls$V1[i], "\\.")[[1]][1]
+    list.ctrl[[ctrlName]] <- fread(ctrls$V1[i], sep = "\t", header = F, data.table = F)
+  }
+}
+
+```
+
+
+## Genomic positions plot
+```{r echo = FALSE}
+
+level.chr <- c('chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY')
+level.mut <- c('AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT')
+
+if(hg19 == T){
+  info <- read.delim("chromInfo_hg19.txt", sep = "\t", header = TRUE)
+  info <- info[info$X.chrom %in% level.chr, c("X.chrom", "size")]
+  info <- data.frame(chrom = factor(info$X.chrom, levels = rev(level.chr)),
+                     chromStart = rep(0, nrow(info)),
+                     chromEnd = info$size)
+}else if(hg38 == T){
+  info <- read.delim("chromInfo_hg38.txt", sep = "\t", header = FALSE)
+  info <- info[info$V1 %in% level.chr, c("V1", "V2")]
+  info <- data.frame(chrom = factor(info$V1, levels = rev(level.chr)),
+                     chromStart = rep(0, nrow(info)),
+                     chromEnd = info$V2)
+}else{
+  stop("Please set up GRCh version")
+}
+
+## cases plot
+case.cnt <- NULL
+for (i in 1:length(list.case)) {
+  case <- list.case[[i]]
+
+  case <- case[case$V1 %in% level.chr,]
+  case <- case[case$V4 %in% level.mut,]
+
+  case <- case[!is.na(case$V1),]
+  case <- case[!is.na(case$V4),]
+
+  if(plot.pos){
+    cat(paste0(names(list.case)[i], " Genomic positions plot"))
+
+    seg <- ggplot()+
+      geom_segment(data = info,
+                   aes(y = chrom, yend = chrom, x = chromStart, xend = chromEnd),
+                   lineend = "round", color = "Gainsboro", size = 5)+
+      geom_segment(data = case,
+                   aes(y = V1, yend = V1, x = V2, xend = V3),
+                   lineend = "butt", color = "DimGray", size = 5)+
+      scale_x_continuous(limits = c(0, 250e6),
+                         expand = c(0, 2e6), ## expand dist = (maxlimit-minlimit)*a + b
+                         breaks = seq(0, 250e6, by = 50e6),
+                         labels = paste0(seq(0, 250, by = 50), "Mb"),
+                         position = "top")+
+      theme_minimal()+
+      theme(panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            plot.margin = margin(0.1, 10, 0.1, 0.1, "pt"))+
+      labs(x = "Genomic positions", y = NULL)
+    print(seg)
+  }
+
+  cnt.i <- case %>% count(V1, V4)
+  case.cnt <- rbind(case.cnt, cnt.i)
+
+  if(plot.mut){
+    df <- acast(cnt.i, factor(V4, levels = level.mut)~factor(V1, levels = level.chr), value.var = "n", fun.aggregate = sum)
+    df[is.na(df)] <- 0
+    df <- cbind(df, total = apply(df, 1, sum))
+    df <- apply(df, 2, function(x) x/sum(x))
+
+    lab <- rownames(df)
+    lab.pos <- cumsum(df[,1]) - df[,1]/2
+
+    df <- melt(df)
+    colnames(df) <- c("mut", "chrom", "value")
+
+    cat(paste0(names(list.case)[i], " mutation proportion plot"))
+
+    bar <- ggplot(df, aes(x = factor(chrom, levels = rev(c(level.chr, "total"))),
+                          y = value,
+                          fill = factor(mut, levels = rev(level.mut))))+
+      geom_bar(color = "black", stat = "identity", width = 0.8)+
+      annotate(geom = "text", x = Inf, y = lab.pos, label = lab, size = 4) +
+      labs(x = NULL, y = NULL, title = NULL)+
+      scale_y_continuous(expand = c(0.01,0),
+                         labels = scales::percent)+
+      scale_x_discrete(expand = c(0.035, 0))+
+      scale_fill_manual(values = rep(c("white", "Gainsboro"), 8), drop=FALSE)+
+      theme_void()+
+      theme(axis.text = element_text(size = 10),
+            plot.margin = margin(20, 10, 2, 2, unit = "pt"),
+            legend.position = "none")+
+      coord_flip(clip = "off")
+    print(bar)
+  }
+}
+case.cnt <- data.frame(aggregate(data = case.cnt, n ~ factor(V4, levels = level.mut), FUN = sum), row.names = 1)
+
+
+## ctrls plot
+if(length(list.ctrl) == 0){
+  ctrl <- read.csv("ctrl_default.csv", header = T, row.names = 1)
+  ctrl.cnt <- data.frame(n = apply(ctrl, 1, sum), row.names = rownames(ctrl))
+  ctrl.cnt <- apply(ctrl.cnt, 2, function(x) x/sum(x))
+}else{
+  ctrl.cnt <- NULL
+  for (i in 1:length(list.ctrl)) {
+    ctrl <- list.ctrl[[i]]
+
+    ctrl <- ctrl[ctrl$V1 %in% level.chr,]
+    ctrl <- ctrl[ctrl$V4 %in% level.mut,]
+
+    ctrl <- ctrl[!is.na(ctrl$V1),]
+    ctrl <- ctrl[!is.na(ctrl$V4),]
+
+   if(plot.pos){
+
+
+      cat(paste0(names(list.ctrl)[i], " Genomic positions plot"))
+
+      seg <- ggplot()+
+        geom_segment(data = info,
+                     aes(y = chrom, yend = chrom, x = chromStart, xend = chromEnd),
+                     lineend = "round", color = "Gainsboro", size = 5)+
+        geom_segment(data = ctrl,
+                     aes(y = V1, yend = V1, x = V2, xend = V3),
+                     lineend = "butt", color = "DimGray", size = 5)+
+        scale_x_continuous(limits = c(0, 250e6),
+                           expand = c(0, 2e6), ## expand dist = (maxlimit-minlimit)*a + b
+                           breaks = seq(0, 250e6, by = 50e6),
+                           labels = paste0(seq(0, 250, by = 50), "Mb"),
+                           position = "top")+
+        theme_minimal()+
+        theme(panel.grid.major = element_blank(),
+              panel.grid.minor = element_blank(),
+              plot.margin = margin(0.1, 10, 0.1, 0.1, "pt"))+
+        labs(x = "Genomic positions", y = NULL)
+      print(seg)
+    }
+
+    cnt.i <- ctrl %>% count(V1, V4)
+    ctrl.cnt <- rbind(ctrl.cnt, cnt.i)
+
+    if(plot.mut){
+      df <- acast(cnt.i, factor(V4, levels = level.mut)~factor(V1, levels = level.chr), value.var = "n", fun.aggregate = sum)
+      df[is.na(df)] <- 0
+      df <- cbind(df, total = apply(df, 1, sum))
+      df <- apply(df, 2, function(x) x/sum(x))
+
+      lab <- rownames(df)
+      lab.pos <- cumsum(df[,1]) - df[,1]/2
+
+      df <- melt(df)
+      colnames(df) <- c("mut", "chrom", "value")
+
+      cat(paste0(names(list.ctrl)[i], " mutation proportion plot"))
+
+      bar <- ggplot(df, aes(x = factor(chrom, levels = rev(c(level.chr, "total"))),
+                            y = value,
+                            fill = factor(mut, levels = rev(level.mut))))+
+        geom_bar(color = "black", stat = "identity", width = 0.8)+
+        annotate(geom = "text", x = Inf, y = lab.pos, label = lab, size = 4) +
+        labs(x = NULL, y = NULL, title = NULL)+
+        #guides(fill=guide_legend(title="", ncol = 16))+
+        scale_y_continuous(expand = c(0.01,0),
+                           labels = scales::percent)+
+        scale_x_discrete(expand = c(0.035, 0))+
+        scale_fill_manual(values = rep(c("white", "Gainsboro"), 8), drop=FALSE)+
+        theme_void()+
+        theme(axis.text = element_text(size = 10),
+              plot.margin = margin(20, 10, 2, 2, unit = "pt"),
+              legend.position = "none")+
+        coord_flip(clip = "off")
+      print(bar)
+    }
+  }
+  ctrl.cnt <- data.frame(aggregate(data = ctrl.cnt, n ~ factor(V4, levels = level.mut), FUN = sum), row.names = 1)
+  ctrl.cnt <- apply(ctrl.cnt, 2, function(x) x/sum(x))
+}
+
+
+
+```
+
+
+## Binomial Test
+```{r echo = FALSE}
+
+## Binomial Test
+res.bit <- data.frame(matrix(nrow = nrow(case.cnt), ncol = 0))
+for (i in 1:nrow(case.cnt)) {
+  mut <- rownames(case.cnt)[i]
+  bit <- tryCatch(binom.test(case.cnt[mut, 'n'], sum(case.cnt[, 'n']), p = ctrl.cnt[mut, 'n']),
+                  error = function(e) return(NA))
+  if(!is.na(bit)[1]){
+    res.bit$Mut[i] <- mut
+    res.bit$Proportion[i] <- bit$estimate
+    res.bit$Expected[i] <- bit$null.value
+    res.bit$pvalue[i] <- bit$p.value
+    res.bit$`0.95CI`[i] <- paste0('[', round(bit$conf.int[1], 4), ';', round(bit$conf.int[2], 4), ']')
+  }else{
+    res.bit$Mut[i] <- mut
+    res.bit$Proportion[i] <- case.cnt[mut, 'n']/sum(case.cnt[, 'n'])
+    res.bit$Expected[i] <- ctrl.cnt[mut, 'n']
+    res.bit$pvalue[i] <- NA
+    res.bit$`0.95CI`[i] <- NA
+  }
+}
+cat("Binomial Test Result")
+kable(res.bit, caption = NULL)
+```
