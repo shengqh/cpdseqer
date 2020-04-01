@@ -3,8 +3,8 @@ import sys
 import logging
 import os
 
-from analysis import demultiplex, bam2dinucleotide, statistic, report
-from __version__ import __version__
+from .analysis import demultiplex, bam2dinucleotide, statistic, report
+from .__version__ import __version__
 
 def initialize_logger(logfile, args):
   logger = logging.getLogger('cpdseqer')

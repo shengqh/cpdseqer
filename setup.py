@@ -37,8 +37,8 @@ setuptools.setup(
     entry_points = {
         'console_scripts': ['cpdseqer=cpdseqer.__main__:main'],
     },
-    packages=['cpdseqer'],
-    package_dir={'cpdseqer': 'cpdseqer'},
+    packages=setuptools.find_packages(exclude=["tests", "tests.*", "scripts"]),
+    package_data={'': ['cpdseqer/*.bed', 'cpdseqer/*.txt', 'cpdseqer/.rmd']},
     install_requires=['argparse', 'pysam', 'pytabix', 'biopython' ],
     classifiers=[
         "Programming Language :: Python :: 3",
