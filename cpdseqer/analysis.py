@@ -295,6 +295,13 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         for k in sorted(dinucleotideMap.keys()):
           fout.write("%s\t%s\t%s\t%d\n" % (dinuName, catName, k, dinucleotideMap[k]))       
   
+def position(logger, configFile, outputFile):
+  rScript = os.path.join( os.path.dirname(__file__), "position.r")
+  if not os.path.exists(rScript):
+    raise Exception("Cannot find rscript %s" % rScript)
+  
+  logger.info("Running script %s ..." % rScript)
+  
 def report(logger, caseFileList, controlFileList, outputFile):
   check_file_exists(caseFileList)
   check_file_exists(controlFileList)

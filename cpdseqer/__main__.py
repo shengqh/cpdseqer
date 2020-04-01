@@ -3,7 +3,7 @@ import sys
 import logging
 import os
 
-from .analysis import demultiplex, bam2dinucleotide, statistic, report
+from .analysis import demultiplex, bam2dinucleotide, statistic, position, report
 from .__version__ import __version__
 
 def initialize_logger(logfile, args):
@@ -74,6 +74,11 @@ def main():
   parser_s.add_argument('--category_index', type=int, default=-1, nargs='?', help='Zero-based category column index in coordinate file')
   parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+
+  # create the parser for the "position" command
+  parser_f = subparsers.add_parser('position')
+  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input sample/case list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
   # create the parser for the "report" command
   parser_r = subparsers.add_parser('report')
@@ -97,6 +102,9 @@ def main():
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
+  elif args.command == "position":
+    logger = initialize_logger(args.output + ".log", args)
+    report(logger, args.input, args.output)
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
     report(logger, args.sample_list_file, args.control_list_file, args.output)
