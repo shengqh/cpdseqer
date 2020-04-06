@@ -5,6 +5,7 @@ import os.path
 import errno
 import tabix
 import sys
+import shutil
 from collections import OrderedDict
 from Bio import SeqIO
 from Bio import bgzf
@@ -35,6 +36,13 @@ class CategoryItem:
     if position <= self.reference_end:
       return(0)
     return(-1)
+
+  def getIndex(self, position):
+    return(position - self.reference_start)
+
+  def getLength(self):
+    return(self.reference_end - self.reference_start)
+
 
 def check_file_exists(file):
   if not os.path.exists(file):
@@ -229,7 +237,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
     coordinateFile = coordinateFileMap[defCatName]
     if (coordinateFile == 'hg38_promoter.bed') or (coordinateFile == 'hg38_tf.bed'):
       if not os.path.exists(coordinateFile):
-        coordinateFile = os.path.join(os.path.dirname(__file__), coordinateFile)
+        coordinateFile = os.path.join(os.path.dirname(__file__), "data", coordinateFile)
 
     check_file_exists(coordinateFile)
     
@@ -273,6 +281,7 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         count = int(record[4])
         if count == 0:
           count = 1
+
         if dinucleotide in catItem.dinucleotide_count_map.keys():
           catItem.dinucleotide_count_map[dinucleotide] = catItem.dinucleotide_count_map[dinucleotide] + count
         else:
@@ -294,29 +303,216 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
         dinucleotideMap = finalMap[dinuName][catName]
         for k in sorted(dinucleotideMap.keys()):
           fout.write("%s\t%s\t%s\t%d\n" % (dinuName, catName, k, dinucleotideMap[k]))       
+
+def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalizedByAA=False, useSpace=False, addChr=False):
+  check_file_exists(dinucleotideFileList)
+  check_file_exists(coordinateFile)
+
+  dinucleotideFileMap = readFileMap(dinucleotideFileList)
+
+  coordinates = []
+  delimit = ' ' if useSpace else '\t'
+  if (coordinateFile == 'hg38_promoter.bed') or (coordinateFile == 'hg38_tf.bed'):
+    if not os.path.exists(coordinateFile):
+      coordinateFile = os.path.join(os.path.dirname(__file__), "data", coordinateFile)
+
+  logger.info("Reading coordinate file " + coordinateFile + " ...")
+      
+  with open(coordinateFile, "rt") as fin:
+    for line in fin:
+      parts = line.rstrip().split(delimit)
+      chrom = "chr" + parts[0] if addChr else parts[0] 
+      coordinates.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), None))
+
+  maxIndex = max([cor.getLength() for cor in coordinates])
+        
+  finalMap = {dinuName:{index:{} for index in range(0, maxIndex)} for dinuName in dinucleotideFileMap.keys()}
   
-def position(logger, configFile, outputFile):
+  for dinuName in dinucleotideFileMap.keys(): 
+    dinucleotideFile = dinucleotideFileMap[dinuName]           
+    idxFile = dinucleotideFile + ".tbi"
+    countFile = dinucleotideFile + ".count"
+
+    check_file_exists(dinucleotideFile)
+    check_file_exists(idxFile)
+    check_file_exists(countFile)
+
+    chromMap = {}
+    with open(countFile, "rt") as fin:
+      fin.readline()
+      for line in fin:
+        parts = line.split('\t')
+        chromMap[parts[0]] = 1
+
+    totalAA = 0
+    if normalizedByAA:
+      countFile = dinucleotideFile + ".count"
+      check_file_exists(countFile)
+
+      with open(countFile, "rt") as fin:
+        for line in fin:
+          parts = line.rstrip().split('\t')
+          if parts[1] == 'AA':
+            totalAA += int(parts[2])
+
+      logger.info("Total %d AA in dinucleotide file %s." % (totalAA, dinucleotideFile))
+
+    logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
+    
+    dinuMap = finalMap[dinuName]
+
+    count = 0
+    tb = tabix.open(dinucleotideFile)
+    for catItem in coordinates:
+      count = count + 1
+      if count % 10000 == 0:
+        logger.info("%d / %d" % (count, len(coordinates)))
+
+      if not catItem.reference_name in chromMap:
+        continue
+      
+      #logger.info("Processing %s:%d-%d ..." %(catItem.reference_name, catItem.reference_start, catItem.reference_end))
+      tbiter = tb.query(catItem.reference_name, catItem.reference_start, catItem.reference_end)
+      records = [record for record in tbiter]
+      for record in records:
+        dinucleotide = record[3]
+        diCount = int(record[4])
+        if diCount == 0:
+          diCount = 1
+
+        start = int(record[1])
+        index = catItem.getIndex(start)
+        if index < 0:
+          continue
+
+        indexMap = dinuMap[index]
+        
+        if not dinucleotide in indexMap:
+          indexMap[dinucleotide] = diCount
+        else:
+          indexMap[dinucleotide] = indexMap[dinucleotide] + diCount
+    
+  logger.info("Writing to %s ..." % outputFile)
+  with open(outputFile, "wt") as fout:
+    if normalizedByAA:
+      fout.write("Sample\tPosition\tDinucleotide\tCount\tNormalizedCount\n")
+    else:
+      fout.write("Sample\tPosition\tDinucleotide\tCount\n")
+    for dinuName in sorted( dinucleotideFileMap.keys() ):      
+      for index in range(0, maxIndex):
+        dinucleotideMap = finalMap[dinuName][index]
+        for k in sorted(dinucleotideMap.keys()):
+          count = dinucleotideMap[k]
+          if normalizedByAA:
+            normalizedCount = count * 1000000 / totalAA 
+            fout.write("%s\t%s\t%s\t%d\t%lf\n" % (dinuName, index, k, count, normalizedCount))       
+          else:
+            fout.write("%s\t%s\t%s\t%d\n" % (dinuName, index, k, count))       
+
   rScript = os.path.join( os.path.dirname(__file__), "position.r")
   if not os.path.exists(rScript):
     raise Exception("Cannot find rscript %s" % rScript)
   
-  logger.info("Running script %s ..." % rScript)
-  
-def report(logger, caseFileList, controlFileList, outputFile):
-  check_file_exists(caseFileList)
-  check_file_exists(controlFileList)
+  cmd = "R --vanilla -f " + rScript + " --args " + os.path.abspath(outputFile) + " " + os.path.abspath(outputFile)
+  runCmd(cmd, logger)
 
-  caseFileMap = readFileMap(caseFileList)
-  controlFileMap = readFileMap(controlFileList)
+  logger.info("done.")
 
-  checkFileMap(caseFileMap)
-  chedkFileMap(controlFileMap)
-    
-  coordinates = []
-  delimit = ' ' if useSpace else '\t'
-  for defCatName in coordinateFileMap.keys():
-    coordinateFile = coordinateFileMap[defCatName]
-    if (coordinateFile == 'hg38_promoter.bed') or (coordinateFile == 'hg38_tf.bed'):
-      if not os.path.exists(coordinateFile):
-        coordinateFile = os.path.join(os.path.dirname(__file__), coordinateFile)
+def report(logger, configFile, outputFilePrefix, block, dbVersion):
+  check_file_exists(configFile)
 
+  rmdScript = os.path.join( os.path.dirname(__file__), "report.rmd")
+  if not os.path.exists(rmdScript):
+    raise Exception("Cannot find rmdScript %s" % rmdScript)
+
+  if os.path.isfile(dbVersion):
+    chromInfo_file = dbVersion
+  elif dbVersion == "hg19":
+    chromInfo_file = os.path.join(os.path.dirname(__file__), "data", "chromInfo_hg19.txt")
+  elif dbVersion == 'hg38':
+    chromInfo_file = os.path.join(os.path.dirname(__file__), "data", "chromInfo_hg38.txt")
+  else:
+    raise Exception("I don't understand dbVersion: %s" % dbVersion)
+
+  level_chr = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
+  level_mut = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
+
+  logger.info("Reading chromosome length from: %s ..." % chromInfo_file)
+  catItems = []# List<CategoryItem>
+  chromLengthMap = {}
+  with open(chromInfo_file, "rt") as fin:
+    for line in fin:
+      if line.startswith("#"):
+        continue
+
+      parts = line.rstrip().split('\t')
+      chrom = parts[0]
+      if not chrom in level_chr:
+        continue
+
+      chromLength = int(parts[1])
+      chromLengthMap[chrom] = chromLength
+
+      chromStart = 0
+      while chromStart < chromLength:
+        chromEnd = min(chromStart + block, chromLength)
+        catItems.append(CategoryItem(chrom, chromStart, chromEnd, None))
+        chromStart = chromStart + block
+
+  logger.info("Preparing dinucleotide files ...")
+  targetFolder = os.path.dirname(outputFilePrefix)
+  targetConfigFile = os.path.join(targetFolder, "dinucleotide_file.list")
+  with open(targetConfigFile, "wt") as fout:
+    with open(configFile, "rt") as fin:
+      for line in fin:
+        parts = line.rstrip().split('\t')
+        dinuFile = parts[0]
+        dinuName = parts[1]
+        dinuGroup = parts[2]
+        targetDinuFile = os.path.join(targetFolder, "%s_block%d.txt" % (os.path.basename(dinuFile), block))
+        fout.write("%s\t%s\t%s\n" % (targetDinuFile, dinuName, dinuGroup))
+
+        if os.path.isfile(targetDinuFile):
+          continue
+
+        idxFile = dinuFile + ".tbi"
+
+        check_file_exists(dinuFile)
+        check_file_exists(idxFile)
+
+        logger.info("Preparing %s ..." % dinuFile)
+        with open(targetDinuFile, "wt") as fdinu:
+          tb = tabix.open(dinuFile)
+
+          count = 0
+          lastChrom = ""
+          for catItem in catItems:
+            count = count + 1
+            if count % 10000 == 0:
+              logger.info("%d / %d" % (count, len(catItems)))
+
+            if catItem.reference_name != lastChrom:
+              if lastChrom in chromLengthMap:
+                fdinu.write("%s\t%d\t%d\t%d\n" % (lastChrom, chromLengthMap[lastChrom] - 1, chromLengthMap[lastChrom], 0))
+              lastChrom = catItem.reference_name
+            
+            #logger.info("Processing %s:%d-%d ..." %(catItem.reference_name, catItem.reference_start, catItem.reference_end))
+            tbiter = tb.query(catItem.reference_name, catItem.reference_start, catItem.reference_end)
+            records = [record for record in tbiter]
+            totalCount = 0
+            for record in records:
+              dinucleotide = record[3]
+              diCount = int(record[4])
+              if diCount == 0:
+                diCount = 1
+              totalCount += diCount
+            
+            if totalCount > 0:
+              fdinu.write("%s\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalCount))
+          fdinu.write("%s\t%d\t%d\t%d\n" % (lastChrom, chromLengthMap[lastChrom] - 1, chromLengthMap[lastChrom], 0))
+
+  targetRmd = outputFilePrefix + ".rmd"
+  shutil.copyfile(rmdScript, targetRmd)
+
+  cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s',params=list(db='%s'));\"" % (os.path.dirname(targetRmd), os.path.basename(targetRmd), dbVersion)
+  runCmd(cmd, logger)

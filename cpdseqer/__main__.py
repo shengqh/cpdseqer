@@ -77,13 +77,18 @@ def main():
 
   # create the parser for the "position" command
   parser_f = subparsers.add_parser('position')
-  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input sample/case list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_f.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file', required=NOT_DEBUG)
+  parser_f.add_argument('-n', '--normalized_by_AA', action='store_true', help='Normalized by total AA in each sample')
+  parser_f.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
+  parser_f.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
   # create the parser for the "report" command
   parser_r = subparsers.add_parser('report')
-  parser_r.add_argument('-s', '--sample_list_file', action='store', nargs='?', help='Input sample/case list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_r.add_argument('-c', '--control_list_file', action='store', nargs='?', help='Input control list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_r.add_argument('-i', '--input', action='store', nargs='?', help='Input config list file, with three columns: file, name and group. Group should be Case or Control', required=NOT_DEBUG)
+  parser_r.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count')
+  parser_r.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19, default is hg38')
   parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv)==1:
@@ -104,10 +109,10 @@ def main():
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
   elif args.command == "position":
     logger = initialize_logger(args.output + ".log", args)
-    report(logger, args.input, args.output)
+    position(logger, args.input, args.output, args.coordinate_file, args.normalized_by_AA, args.space, args.add_chr)
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
-    report(logger, args.sample_list_file, args.control_list_file, args.output)
+    report(logger, args.input, args.output, args.block, args.db)
   
 if __name__ == "__main__":
     main()

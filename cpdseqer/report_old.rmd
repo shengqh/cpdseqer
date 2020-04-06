@@ -23,7 +23,9 @@ params:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r init, include=FALSE}
+
 ## parameters
 hg19 = (params$db=="hg19") ## default
 hg38 = (! hg19)
@@ -49,6 +51,7 @@ if(!all(samples$Group %in% c(0, 1))){
 }
 
 ```
+
 
 # Genomic positions plot
 
@@ -111,4 +114,84 @@ for (i in 1:nrow(samples)) {
   }
 }
 
+```
+  }
+
+  cnt.i <- case %>% count(V1, V4)
+  colnames(cnt.i)<-c("Chrom", "Dinucleotide", "Count")
+  cnt.i$Sample = sampleName
+  cnt.i$Group = sampleGroup
+  cnt.all <- rbind(cnt.all, cnt.i)
+
+  if(plot.mut){
+    df <- acast(cnt.i, factor(Dinucleotide, levels = level.mut)~factor(Chrom, levels = level.chr), value.var = "Count", fun.aggregate = sum)
+    df[is.na(df)] <- 0
+    df <- cbind(df, total = apply(df, 1, sum))
+    df <- apply(df, 2, function(x) x/sum(x))
+
+    lab <- rownames(df)
+    lab.pos <- cumsum(df[,1]) - df[,1]/2
+
+    df <- melt(df)
+    colnames(df) <- c("mut", "chrom", "value")
+
+    cat(paste0("\n\n### ", sampleName, " mutation proportion plot\n\n"))
+
+    bar <- ggplot(df, aes(x = factor(chrom, levels = rev(c(level.chr, "total"))),
+                          y = value,
+                          fill = factor(mut, levels = rev(level.mut))))+
+      geom_bar(color = "black", stat = "identity", width = 0.8)+
+      annotate(geom = "text", x = Inf, y = lab.pos, label = lab, size = 4) +
+      labs(x = NULL, y = NULL, title = NULL)+
+      scale_y_continuous(expand = c(0.01,0),
+                         labels = scales::percent)+
+      scale_x_discrete(expand = c(0.035, 0))+
+      scale_fill_manual(values = rep(c("white", "Gainsboro"), 8), drop=FALSE)+
+      theme_void()+
+      theme(axis.text = element_text(size = 10),
+            plot.margin = margin(20, 10, 2, 2, unit = "pt"),
+            legend.position = "none")+
+      coord_flip(clip = "off")
+    print(bar)
+  }
+}
+
+sample.cnt.aggr <- data.frame(aggregate(data = cnt.all, Count ~ Group + Dinucleotide, FUN = sum))
+
+
+```
+
+
+# Binomial Test
+
+```{r binomial, echo=FALSE, results='asis'}
+
+case.cnt<-sample.cnt.aggr[sample.cnt.aggr$Group==1,]
+rownames(case.cnt)<-case.cnt$Dinucleotide
+ctrl.cnt<-sample.cnt.aggr[sample.cnt.aggr$Group==0,]
+rownames(ctrl.cnt)<-ctrl.cnt$Dinucleotide
+ctrl.cnt$Proportion <- unlist(lapply(ctrl.cnt$Count, function(x) x/sum(ctrl.cnt$Count)))
+
+## Binomial Test
+res.bit <- data.frame(matrix(nrow = nrow(case.cnt), ncol = 0))
+for (i in 1:nrow(case.cnt)) {
+  mut <- rownames(case.cnt)[i]
+  bit <- tryCatch(binom.test(case.cnt[mut, 'Count'], sum(case.cnt[, 'Count']), p = ctrl.cnt[mut, 'Proportion']),
+                  error = function(e) return(NA))
+  if(!is.na(bit)[1]){
+    res.bit$Mut[i] <- mut
+    res.bit$Proportion[i] <- bit$estimate
+    res.bit$Expected[i] <- bit$null.value
+    res.bit$pvalue[i] <- bit$p.value
+    res.bit$`0.95CI`[i] <- paste0('[', round(bit$conf.int[1], 4), ';', round(bit$conf.int[2], 4), ']')
+  }else{
+    res.bit$Mut[i] <- mut
+    res.bit$Proportion[i] <- case.cnt[mut, 'Count']/sum(case.cnt[, 'Count'])
+    res.bit$Expected[i] <- ctrl.cnt[mut, 'Count']
+    res.bit$pvalue[i] <- NA
+    res.bit$`0.95CI`[i] <- NA
+  }
+}
+cat("\n\n## Binomial Test Result\n\n")
+kable(res.bit, caption = NULL)
 ```
