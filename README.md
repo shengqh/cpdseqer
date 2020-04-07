@@ -49,9 +49,7 @@ GAACTGAT        UV
 ## Align reads to genome using bowtie2
 
 ```
-bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz \
-  --sam-RG ID:Control --sam-RG LB:Control --sam-RG SM:Control --sam-RG PL:ILLUMINA \
-  -S Control.sam 2> Control.log
+bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz -S Control.sam 2> Control.log
   
 samtools view -Shu -F 256 Control.sam | samtools sort -o Control.bam -T Control -
 
@@ -74,7 +72,7 @@ cd ..
 
 ```
 usage: cpdseqer bam2dinucleotide [-h] -i [INPUT] -g [GENOME_SEQ_FILE]
-                                 [-q [MAPPING_QUALITY]] -o [OUTPUT]
+                                 [-q [MAPPING_QUALITY]] [-u] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -84,8 +82,10 @@ optional arguments:
                         Input genome seq file
   -q [MAPPING_QUALITY], --mapping_quality [MAPPING_QUALITY]
                         Minimum mapping quality of read (default 20)
+  -u, --unique_only     Use uniquely mapped read only
   -o [OUTPUT], --output [OUTPUT]
                         Output file name
+
 ```
 
 for example:
@@ -165,7 +165,70 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/cpd__fileList2.list
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 
+```
 
+## Draw position figure
+
+```
+usage: cpdseqer position [-h] -i [INPUT] -c [COORDINATE_FILE]
+                         [-b [BACKGROUND_FILES]] [-s] [--add_chr] -o [OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i [INPUT], --input [INPUT]
+                        Input dinucleotide list file, first column is file
+                        location, second column is file name
+  -c [COORDINATE_FILE], --coordinate_file [COORDINATE_FILE]
+                        Input coordinate bed file
+  -b [BACKGROUND_FILES], --background_files [BACKGROUND_FILES]
+                        Background files, seprated by "," or set "auto" to use
+                        default
+  -s, --space           Use space rather than tab in coordinate files
+  --add_chr             Add chr in chromosome name in coordinate file
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file name
+
+```
+
+for example:
+
+```
+cpdseqer position -s -b auto -i cpd__fileList1.list -c hg38 -o cpd_position.txt
+```
+
+## Get report
+
+```
+usage: cpdseqer report [-h] -i [INPUT] -g [GROUP] [-b [BLOCK]] [-d [DB]] -o
+                       [OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i [INPUT], --input [INPUT]
+                        Input dinucleotide list file, first column is file
+                        location, second column is file name
+  -g [GROUP], --group [GROUP]
+                        Input group list file, first column is group (0 for
+                        control and 1 for case), second column is file name
+  -b [BLOCK], --block [BLOCK]
+                        Block size for summerize dinucleotide count
+  -d [DB], --db [DB]    Input database version, hg38 or hg19, default is hg38
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file name
+
+```
+
+for example:
+
+```
+cpdseqer report -i cpd__fileList1.list -g group_definition.txt  -d hg38   -o cpd.report
+```
+
+group_definition.txt (separated by tab)
+
+```
+0      Control
+1      Case
 ```
 
 # Running cpdseqer using singularity
