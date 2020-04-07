@@ -12,7 +12,7 @@ from .DinucleotideItem import DinucleotideItem
 
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap
 
-def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQuality=20):
+def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQuality=20, uniqueOnly=False):
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
@@ -31,6 +31,15 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
       if s.mapping_quality < mappingQuality:
         continue
         
+      if uniqueOnly:
+        isUnique=True
+        for tag in s.tags:
+          if tag[0] == 'XS':
+            isUnique=False
+            break
+        if not isUnique:
+          continue
+
       if s.is_reverse:
         dinuItems.append(DinucleotideItem(s.reference_name, s.reference_end, s.reference_end + 2, s.query_name, s.mapping_quality, "-", "" ))
       else:
