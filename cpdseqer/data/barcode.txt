@@ -1,0 +1,2 @@
+ATCGCGAT	Control
+GAACTGAT	UV

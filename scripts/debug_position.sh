@@ -1,0 +1,1 @@
+python debug.py position -i /scratch/cqs/shengq2/guoyan/20191104_cpd_analysis/statistic/result/cpd__fileList1.list -c /scratch/cqs/shengq2/guoyan/20191104_cpd_analysis/position/nucleosome_hg38_interval.txt -o /scratch/cqs/shengq2/guoyan/20191104_cpd_analysis/position/nucleosome_position.txt -s -n

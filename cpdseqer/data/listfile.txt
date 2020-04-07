@@ -1,0 +1,4 @@
+case1.bed	Case1	Case
+case2.bed	Case2	Case
+ctrl1.bed	Control1	Control
+ctrl2.bed	Control2	Control
