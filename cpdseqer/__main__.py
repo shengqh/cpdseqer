@@ -1,35 +1,14 @@
 import argparse
 import sys
-import logging
 import os
 
-from .analysis import demultiplex, bam2dinucleotide, statistic, position, report
+from .demultiplex_utils import demultiplex
+from .bam2dinucleotide_utils import bam2dinucleotide
+from .statistic_utils import statistic
+from .position_utils import position
+from .report_utils import report
 from .__version__ import __version__
-
-def initialize_logger(logfile, args):
-  logger = logging.getLogger('cpdseqer')
-  loglevel = logging.INFO
-  logger.setLevel(loglevel)
-
-  formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)-8s - %(message)s')    
- 
-  # create console handler and set level to info
-  handler = logging.StreamHandler()
-  handler.setLevel(loglevel)
-  handler.setFormatter(formatter)
-  logger.addHandler(handler)
- 
-  # create error file handler and set level to error
-  handler = logging.FileHandler(logfile, "w")
-  handler.setLevel(loglevel)
-  handler.setFormatter(formatter)
-  logger.addHandler(handler)
- 
-  return(logger)
-
-def runCommand(command, logger):
-  logger.info("run : " + command )
-  os.system(command)
+from .common_utils import runCmd, initialize_logger
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
