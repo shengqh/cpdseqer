@@ -1,4 +1,5 @@
 import gzip
+import zipfile
 import pysam
 import os
 import os.path
@@ -6,29 +7,71 @@ import errno
 import tabix
 import sys
 import shutil
+from io import TextIOWrapper
 
 from .CategoryItem import CategoryItem
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr
 
-def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalizedByAA=False, useSpace=False, addChr=False):
-  check_file_exists(dinucleotideFileList)
-  check_file_exists(coordinateFile)
 
+def readCoordinate(fin, addChr, delimit):
+  result = []
+  for line in fin:
+    parts = line.rstrip().split(delimit)
+    chrom = "chr" + parts[0] if addChr else parts[0] 
+    result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), None))
+  return(result)
+
+def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalizedFiles=None, useSpace=False, addChr=False):
+  check_file_exists(dinucleotideFileList)
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
 
-  coordinates = []
-  delimit = ' ' if useSpace else '\t'
-  if (coordinateFile == 'hg38_promoter.bed') or (coordinateFile == 'hg38_tf.bed'):
-    if not os.path.exists(coordinateFile):
-      coordinateFile = os.path.join(os.path.dirname(__file__), "data", coordinateFile)
+  if (coordinateFile == 'hg38') or (coordinateFile == 'hg19'):
+    coordinateFile = os.path.join(os.path.dirname(__file__), "data", "nucleosome_%s_interval.zip" % coordinateFile)
+  check_file_exists(coordinateFile)
+
+  bNormalize = normalizedFiles != None
+  if bNormalize:
+    if normalizedFiles == "auto":
+      normFiles = [os.path.join(os.path.dirname(__file__), "data", 'Naked.1.count'), os.path.join(os.path.dirname(__file__), "data", 'Naked.2.count')]
+    else:
+      normFiles = normalizedFiles.split(',')
+
+    for normFile in normFiles:
+      check_file_exists(normFile)
+
+    backgroundMap = {}
+    for normFile in normFiles:
+      with open(normFile, "rt") as fin:
+        fin.readline()
+        for line in fin:
+          parts = line.rstrip().split('\t')
+          if parts[1] in backgroundMap:
+            backgroundMap[parts[1]] += int(parts[2])
+          else:
+            backgroundMap[parts[1]] = int(parts[2])
+    
+    meanCount = sum(backgroundMap.values()) / len(backgroundMap)
+    backgroundFactor = { key:(backgroundMap[key] / meanCount) for key in backgroundMap.keys() }
+    with open(outputFile + ".norm.txt", "wt") as fout:
+      fout.write("Dinucleotide\tCount\tFactor\n")
+      for dinu in sorted(backgroundMap.keys()):
+        fout.write("%s\t%d\t%.lf" % (dinu, backgroundMap[dinu], backgroundFactor[dinu]))
 
   logger.info("Reading coordinate file " + coordinateFile + " ...")
       
-  with open(coordinateFile, "rt") as fin:
-    for line in fin:
-      parts = line.rstrip().split(delimit)
-      chrom = "chr" + parts[0] if addChr else parts[0] 
-      coordinates.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), None))
+  delimit = ' ' if useSpace else '\t'
+  if coordinateFile.endswith(".zip"):
+    internalFile = os.path.basename(coordinateFile).replace(".zip", ".txt")
+    with zipfile.ZipFile(coordinateFile) as z:
+      with z.open(internalFile) as fz:
+        with TextIOWrapper(fz) as fin:
+          coordinates = readCoordinate(fin, addChr, delimit)
+  elif coordinateFile.endswith(".gz"):
+    with gzip.open(coordinateFile, "rt") as fin:
+      coordinates = readCoordinate(fin, addChr, delimit)
+  else:
+    with open(coordinate, "rt") as fin:
+      coordinates = readCoordinate(fin, addChr, delimit)
 
   maxIndex = max([cor.getLength() for cor in coordinates])
         
@@ -49,19 +92,6 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
       for line in fin:
         parts = line.split('\t')
         chromMap[parts[0]] = 1
-
-    totalAA = 0
-    if normalizedByAA:
-      countFile = dinucleotideFile + ".count"
-      check_file_exists(countFile)
-
-      with open(countFile, "rt") as fin:
-        for line in fin:
-          parts = line.rstrip().split('\t')
-          if parts[1] == 'AA':
-            totalAA += int(parts[2])
-
-      logger.info("Total %d AA in dinucleotide file %s." % (totalAA, dinucleotideFile))
 
     logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
     
@@ -100,7 +130,7 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
     
   logger.info("Writing to %s ..." % outputFile)
   with open(outputFile, "wt") as fout:
-    if normalizedByAA:
+    if bNormalize:
       fout.write("Sample\tPosition\tDinucleotide\tCount\tNormalizedCount\n")
     else:
       fout.write("Sample\tPosition\tDinucleotide\tCount\n")
@@ -109,8 +139,8 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
         dinucleotideMap = finalMap[dinuName][index]
         for k in sorted(dinucleotideMap.keys()):
           count = dinucleotideMap[k]
-          if normalizedByAA:
-            normalizedCount = count * 1000000 / totalAA 
+          if bNormalize:
+            normalizedCount = count / backgroundFactor[k] 
             fout.write("%s\t%s\t%s\t%d\t%lf\n" % (dinuName, index, k, count, normalizedCount))       
           else:
             fout.write("%s\t%s\t%s\t%d\n" % (dinuName, index, k, count))       
