@@ -221,7 +221,7 @@ optional arguments:
 for example:
 
 ```
-cpdseqer report -i cpd__fileList1.list -g group_definition.txt  -d hg38   -o cpd.report
+cpdseqer report -i cpd__fileList1.list -g group_definition.txt -d hg38 -o cpd.report
 ```
 
 group_definition.txt (separated by tab)

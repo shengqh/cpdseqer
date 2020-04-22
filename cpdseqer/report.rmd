@@ -47,8 +47,8 @@ optionTable <-read.delim("options.txt", sep="\t", header=T, stringsAsFactors = F
 options<-optionTable$Value
 names(options)<-optionTable$Name
 
-controlSamples<-samples$Sample[samples$Grou==0]
-caseSamples<-samples$Sample[samples$Grou==1]
+controlSamples<-samples$Sample[samples$Group==0]
+caseSamples<-samples$Sample[samples$Group==1]
 doBinomialTest<-(length(controlSamples) > 0) & (length(controlSamples > 0))
 
 ```
