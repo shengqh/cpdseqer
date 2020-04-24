@@ -12,7 +12,7 @@ from .DinucleotideItem import DinucleotideItem
 
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap
 
-def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQuality=20, uniqueOnly=False):
+def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQuality=20, uniqueOnly=False, isTest=False):
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
@@ -24,6 +24,9 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
       count = count + 1
       if count % 1000000 == 0:
         logger.info(count)
+
+        if isTest:
+          break
         
       if s.is_unmapped:
         continue
