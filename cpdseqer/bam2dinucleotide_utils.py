@@ -31,6 +31,9 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
       if s.is_unmapped:
         continue
 
+      if s.is_paired and (not s.is_read1):
+        continue
+
       if s.mapping_quality < mappingQuality:
         continue
         
