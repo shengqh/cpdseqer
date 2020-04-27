@@ -3,15 +3,12 @@ import os
 import os.path
 import sys
 import shutil
-from pathlib import Path
 from collections import OrderedDict
 
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap
  
 def demultiplex(logger, inputFile, outputFolder, configFile, args):
   check_file_exists(inputFile)
-
-  Path(outputFolder).mkdir(parents=True, exist_ok=True)
 
   logger.info("reading barcode file: " + configFile + " ...")
   sampleSeqMap = readFileMap(configFile)

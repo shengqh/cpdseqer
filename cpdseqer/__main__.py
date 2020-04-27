@@ -1,6 +1,7 @@
 import argparse
 import sys
 import os
+from pathlib import Path
 
 from .demultiplex_utils import demultiplex
 # from .bowtie2_utils import bowtie2
@@ -89,6 +90,8 @@ def main():
   print(args)
   
   if args.command == "demultiplex":
+    if not os.path.isdir(args.output):
+      Path(args.output).mkdir(parents=True)
     logger = initialize_logger(args.output + "/cpdseqer_demultiplex.log", args)
     demultiplex(logger, args.input, args.output, args.barcodeFile, args)
   # elif args.command == 'bowtie2':
