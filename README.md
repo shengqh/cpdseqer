@@ -12,10 +12,16 @@ apt-get install -y tabix
 
 # Installation
 
-Install python main package
+Install python main package.
 
 ```
 pip install git+git://github.com/shengqh/cpdseqer.git
+```
+
+If you don't have pip installed, you need to install pip.
+```
+curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+python get-pip.py
 ```
 
 # Usage
