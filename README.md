@@ -4,24 +4,25 @@ This package is used to do CPD sequence data analysis.
 
 # Prerequisites
 
-Install tabix
+Install tabix, samtools and bowtie2
 
 ```
-apt-get install -y tabix
+sudo apt-get install -y tabix samtools bowtie2
 ```
 
 # Installation
 
-Install python main package.
+Install cpdseqer package from github
 
 ```
-pip install git+git://github.com/shengqh/cpdseqer.git
+sudo pip install git+git://github.com/shengqh/cpdseqer.git
 ```
 
-If you don't have pip installed, you need to install pip.
+If you don't have pip installed, you need to install pip first.
+
 ```
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python get-pip.py
+sudo python get-pip.py
 ```
 
 # Usage
@@ -41,15 +42,25 @@ optional arguments:
                         Tab-delimited file, first column is barcode, second
                         column is sample name
 ```
+
 for example:
+
 ```
-cpdseqer demultiplex -i sample.fastq.gz -o . -b barcode.txt
+cpdseqer demultiplex -i example.fastq.gz -o . -b barcode.txt
 ```
 
-Example of [barcode.txt](https://github.com/shengqh/cpdseqer/raw/master/data/barcode.txt), columns are separated by tab
+The [barcode.txt](https://cqsweb.app.vumc.org/download1/cpdseqer/barcode.txt) contains two columns indicate barcode and sample name (separated by tab).
+
+|||
+|---|---|
+|ATCGCGAT|Control|
+|GAACTGAT|UV|
+
+You can download barcode and example.fastq.gz file:
+
 ```
-ATCGCGAT        Control
-GAACTGAT        UV
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/example.fastq.gz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/barcode.txt
 ```
 
 ## Align reads to genome using bowtie2
@@ -103,7 +114,7 @@ cpdseqer bam2dinucleotide \
   -o Control.dinucleotide.bed.bgz
 ```
 
-You can download bam files:
+You can download our example bam files:
 
 ```
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bam
@@ -140,34 +151,34 @@ for example:
 
 ```
 cpdseqer statistic --category_index 3 \
-  -i cpd__fileList1.list \
-  -c cpd__fileList2.list \
+  -i dinucleotide.list \
+  -c coordinates.list \
   -o cpd.dinucleotide.statistic.tsv
 ```
 
-cpd__fileList1.list (separated by tab)
+The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
 
-```
-Control.dinucleotide.bed.bgz      Control
-UV.dinucleotide.bed.bgz           UV
-```
+|||
+|---|---|
+|Control.dinucleotide.bed.bgz|Control|
+|UV.dinucleotide.bed.bgz|UV|
 
-cpd__fileList2.list (separated by tab)
+The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
 
-```
-hg38_promoter.bed      Promoter
-hg38_tf.bed            TFBinding
-```
+|||
+|---|---|
+|hg38_promoter.bed|Promoter|
+|hg38_tf.bed|TFBinding|
 
-You can download example files as following scripts. The hg38_promoter.bed contains three columns only. So, Promoter (from  cpd__fileList2.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
+You can download example files as following scripts. The hg38_promoter.bed contains three columns only. So, Promoter (from  coordinates.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
 
 ```
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.dinucleotide.bed.bgz
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.dinucleotide.bed.bgz.tbi
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.dinucleotide.bed.bgz
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.dinucleotide.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/cpd__fileList1.list
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/cpd__fileList2.list
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/dinucleotide.list
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/coordinates.list
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 
@@ -196,10 +207,25 @@ optional arguments:
 
 ```
 
-for example:
+for example, we will calculate the dinucleotide position in nucleosome:
 
 ```
-cpdseqer position -s -b auto -i cpd__fileList1.list -c hg38 -o cpd_position.txt
+cpdseqer position -s -b auto -i dinucleotide.list -c hg38 -o cpd_position.txt
+```
+
+Here, you can input absolute coordinate file, or hg38/hg19. hg38 and hg19 indicates the nucleosome coordinate files which can be downloaded by:
+
+```
+wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg19_interval.zip
+wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg38_interval.zip
+
+```
+
+If 'auto' is used as default background file, it will be replaced by the following two files:
+
+```
+wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/Naked.1.count
+wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/Naked.2.count
 ```
 
 ## Get report
@@ -227,15 +253,22 @@ optional arguments:
 for example:
 
 ```
-cpdseqer report -i cpd__fileList1.list -g group_definition.txt -d hg38 -o cpd.report
+cpdseqer report -i dinucleotide.list -g group_definition.txt -d hg38 -o cpd.report
 ```
 
-group_definition.txt (separated by tab)
+[group_definition.txt](https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/group_definition.txt) contains two columns indicate case(1)/control(0) and sample name (separated by tab). The sample name in group_definition.txt should be identical to sample name in dinucleotide.list.
+
+|||
+|---|---|
+|0|Control|
+|1|UV|
+
+You can download group_definition file from:
 
 ```
-0      Control
-1      Case
+wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/group_definition.txt
 ```
+
 
 # Running cpdseqer using singularity
 
