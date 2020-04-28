@@ -12,7 +12,7 @@ from .DinucleotideItem import DinucleotideItem
 
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap
 
-def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQuality=20, uniqueOnly=False, isTest=False):
+def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQuality=20, uniqueOnly=False, isTest=False):
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
@@ -95,6 +95,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
                 dinu = str(Seq(dinu).reverse_complement())
               di.dinucleotide = dinu
   
+  outputFile = outputPrefix + ".bed.bgz"
   countMap = OrderedDict()
   logger.info("Writing dinucleotide to " + outputFile + " ...")
   with bgzf.BgzfWriter(outputFile, "wb") as fout:
@@ -107,7 +108,7 @@ def bam2dinucleotide(logger, bamFile, outputFile, genomeFastaFile, mappingQualit
           fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
       countMap[chrom] = chromMap
   
-  with open(outputFile + ".count", "wt") as fout:
+  with open(outputPrefix + ".count", "wt") as fout:
     fout.write("Chromosome\tDinucleotide\tCount\n")
     for chrom in countMap.keys():
       chromMap = countMap[chrom]

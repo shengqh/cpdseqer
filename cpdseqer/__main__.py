@@ -54,7 +54,7 @@ def main():
   parser_p.add_argument('-q', '--mapping_quality', type=int, default=20, nargs='?', help='Minimum mapping quality of read (default 20)', required=False)
   parser_p.add_argument('-u', '--unique_only', action='store_true', help='Use uniquely mapped read only')
   parser_p.add_argument('-t', '--test', action='store_true', help='Test the first 1000000 reads only')
-  parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+  parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   # create the parser for the "statistic" command
   parser_s = subparsers.add_parser('statistic')
@@ -98,16 +98,16 @@ def main():
   #   logger = initialize_logger(args.output + ".cpdseqer_bowtie2.log", args)
   #   bowtie2(logger, args.input, args.output, args.database_prefix, args.thread)
   elif args.command == "bam2dinucleotide":
-    logger = initialize_logger(args.output + ".cpdseqer_bam2dinucleotide.log", args)
+    logger = initialize_logger(args.output + ".log", args)
     bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file, args.mapping_quality, args.unique_only, args.test)
   elif args.command == "statistic":
-    logger = initialize_logger(args.output + ".cpdseqer_statistic.log", args)
+    logger = initialize_logger(args.output + ".log", args)
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
   elif args.command == "position":
-    logger = initialize_logger(args.output + ".cpdseqer_position.log", args)
+    logger = initialize_logger(args.output + ".log", args)
     position(logger, args.input, args.output, args.coordinate_file, args.background_files, args.space, args.add_chr)
   elif args.command == "report":
-    logger = initialize_logger(args.output + ".cpdseqer_report.log", args)
+    logger = initialize_logger(args.output + ".log", args)
     report(logger, args.input, args.group, args.output, args.block, args.db)
   
 if __name__ == "__main__":

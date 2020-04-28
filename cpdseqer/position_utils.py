@@ -80,7 +80,7 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
   for dinuName in dinucleotideFileMap.keys(): 
     dinucleotideFile = dinucleotideFileMap[dinuName]           
     idxFile = dinucleotideFile + ".tbi"
-    countFile = dinucleotideFile + ".count"
+    countFile = dinucleotideFile.replace(".bed.bgz", ".count")
 
     check_file_exists(dinucleotideFile)
     check_file_exists(idxFile)
