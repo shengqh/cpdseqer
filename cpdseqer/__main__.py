@@ -52,6 +52,7 @@ def main():
   parser_p.add_argument('-i', '--input', action='store', nargs='?', help='Input BAM file', required=NOT_DEBUG)
   parser_p.add_argument('-g', '--genome_seq_file', action='store', nargs='?', help='Input genome seq file', required=NOT_DEBUG)
   parser_p.add_argument('-q', '--mapping_quality', type=int, default=20, nargs='?', help='Minimum mapping quality of read (default 20)', required=False)
+  parser_p.add_argument('-m', '--min_coverage', type=int, default=1, help='The minimum coverage of dinucleotide for counting (default 1)')
   parser_p.add_argument('-u', '--unique_only', action='store_true', help='Use uniquely mapped read only')
   parser_p.add_argument('-t', '--test', action='store_true', help='Test the first 1000000 reads only')
   parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
@@ -99,7 +100,7 @@ def main():
   #   bowtie2(logger, args.input, args.output, args.database_prefix, args.thread)
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
-    bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file, args.mapping_quality, args.unique_only, args.test)
+    bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file, args.mapping_quality, args.unique_only, args.min_coverage, args.test)
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)

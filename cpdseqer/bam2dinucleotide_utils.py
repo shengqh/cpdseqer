@@ -12,7 +12,7 @@ from .DinucleotideItem import DinucleotideItem
 
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap
 
-def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQuality=20, uniqueOnly=False, isTest=False):
+def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQuality=20, uniqueOnly=False, minCoverage=1, isTest=False):
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
@@ -78,6 +78,11 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
     chrDinuMap[chr] = [i for j, i in enumerate(values) if j not in deleteList]
     logger.info("after combine, there is %d dinucleotides of chromosome %s..." % (len(chrDinuMap[chr]), chr ) )
 
+  if minCoverage > 1:
+    for chr in chrDinuMap.keys():
+      values = chrDinuMap[chr]
+      chrDinuMap[chr] = [v for v in values if v.count >= minCoverage]
+
   with open(genomeFastaFile, "rt") as fin:  
     for record in SeqIO.parse(fin,'fasta'):
       id = record.id
@@ -104,16 +109,19 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
       chromMap = {}
       for s in diList:
         if (s.dinucleotide != "") and (not 'N' in s.dinucleotide):
-          chromMap[s.dinucleotide] = chromMap.setdefault(s.dinucleotide, 0) + s.count
+          countVec = chromMap.setdefault(s.dinucleotide, [0,0])
+          countVec[0] = countVec[0] + s.count
+          countVec[1] = countVec[1] + 1
           fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
       countMap[chrom] = chromMap
   
   with open(outputPrefix + ".count", "wt") as fout:
-    fout.write("Chromosome\tDinucleotide\tCount\n")
+    fout.write("Chromosome\tDinucleotide\tReadCount\tSiteCount\n")
     for chrom in countMap.keys():
       chromMap = countMap[chrom]
       for dinucleotide in chromMap.keys():
-        fout.write("%s\t%s\t%d\n" % (chrom, dinucleotide, chromMap[dinucleotide]))
+        countVec = chromMap[dinucleotide]
+        fout.write("%s\t%s\t%d\t%d\n" % (chrom, dinucleotide, countVec[0], countVec[1]))
 
   runCmd("tabix -p bed %s " % outputFile, logger)
   logger.info("done.")
