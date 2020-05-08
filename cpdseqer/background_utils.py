@@ -14,7 +14,7 @@ from .common_utils import check_file_exists, runCmd, readFileMap, checkFileMap
 
 def background(logger, fastaFile, outputFile, bedFile):
     check_file_exists(fastaFile)
-    if bed_file != "NONE":
+    if bedFile != "NONE":
         check_file_exists(bedFile)
     
     logger.info("Reading fasta file %s ..." % fastaFile)
