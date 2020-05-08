@@ -24,7 +24,8 @@ def background(logger, fastaFile, outputFile, bedFile):
     for ii in range(len(seqs)):
         lags.append(seqs[ii].description)
     
-    result_all_all = pd.DataFrame(index=['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT', 'TT', 'TA', 'TC', 'TG'])
+    dinu_types = ['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT', 'TT', 'TA', 'TC', 'TG']
+    result_all_all = pd.DataFrame(index=dinu_types)
 
     if bedFile != 'NONE':
         logger.info("Processing by bed file %s ..." % bedFile)
@@ -62,7 +63,7 @@ def background(logger, fastaFile, outputFile, bedFile):
       
               for type_name in np.unique(np.array(types)):
                   result_all = {}
-                  for jj in ['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT', 'TT', 'TA', 'TC', 'TG']:
+                  for jj in dinu_types:
                       result_all[jj] = 0
       
                   aa = [index for index, value in enumerate(types) if (value == type_name) ]
@@ -82,8 +83,9 @@ def background(logger, fastaFile, outputFile, bedFile):
                           for jj in range(len(sub_sub_start_pos)):
                               ref_seq = seq.seq[(sub_sub_start_pos[jj] - 1):(sub_sub_end_pos[jj])]
                               for idx in range((len(ref_seq) - 1)):
-                                  if result_all.has_key(ref_seq[idx:(idx + 2)]):
-                                      result_all[ref_seq[idx:(idx + 2)]] = result_all[ref_seq[idx:(idx + 2)]] + 1
+                                  dinu = ref_seq[idx:(idx + 2)]
+                                  if dinu in dinu_types:
+                                      result_all[dinu] = result_all[dinu] + 1
       
                   result_all_all[type_name] = pd.DataFrame.from_dict(result_all, orient='index')
       
@@ -98,7 +100,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                       end_pos.append(int(words[2]))
           
               result_all = {}
-              for jj in ['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT', 'TT', 'TA', 'TC', 'TG']:
+              for jj in dinu_types:
                   result_all[jj] = 0
       
               for chr_ID in np.unique(np.array(data_chrom)):
@@ -113,20 +115,22 @@ def background(logger, fastaFile, outputFile, bedFile):
                       for jj in range(len(sub_start_pos)):
                           ref_seq = seq.seq[(sub_start_pos[jj] - 1):(sub_end_pos[jj])]
                           for idx in range((len(ref_seq) - 1)):
-                              if result_all.has_key(ref_seq[idx:(idx + 2)]):
-                                  result_all[ref_seq[idx:(idx + 2)]] = result_all[ref_seq[idx:(idx + 2)]] + 1
+                              dinu = ref_seq[idx:(idx + 2)]
+                              if dinu in dinu_types:
+                                  result_all[dinu] = result_all[dinu] + 1
               result_all_all["Total"] = pd.DataFrame.from_dict(result_all, orient='index')
       
     if bedFile == 'NONE':
         result_all = {}
-        for jj in ['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT', 'TT', 'TA', 'TC', 'TG']:
+        for jj in dinu_types:
             result_all[jj] = 0
         for ii in range(len(seqs)):
             seq = seqs[ii]
             ref_seq = seq.seq
             for idx in range((len(ref_seq) - 1)):
-                if result_all.has_key(ref_seq[idx:(idx + 2)]):
-                    result_all[ref_seq[idx:(idx + 2)]] = result_all[ref_seq[idx:(idx + 2)]] + 1
+                dinu = ref_seq[idx:(idx + 2)]
+                if dinu in dinu_types:
+                    result_all[dinu] = result_all[dinu] + 1
     
         result_all_all["Total"] = pd.DataFrame.from_dict(result_all, orient='index')
     
