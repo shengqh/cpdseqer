@@ -3,6 +3,7 @@ import sys
 import os
 from pathlib import Path
 
+from .background_utils import background
 from .demultiplex_utils import demultiplex
 # from .bowtie2_utils import bowtie2
 from .bam2dinucleotide_utils import bam2dinucleotide
@@ -25,6 +26,7 @@ from .common_utils import runCmd, initialize_logger
 # were combined for most of the analyses. Additionally, in some cases only mutagenic CPD (mCPDs), which are CPD reads 
 # associated with TC, CT, or CC dinucleotides, were analyzed.
 
+
 def main():
   parser = argparse.ArgumentParser(description="CPDseq analysis " + __version__,
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -33,12 +35,18 @@ def main():
   NOT_DEBUG = not DEBUG
   
   subparsers = parser.add_subparsers(dest="command")
+  
+  # create the parser for the "background" command
+  parser_bg = subparsers.add_parser('background')
+	parser_bg.add_argument("-i", "--input", help="input fasta file name", required=NOT_DEBUG)
+	parser_bg.add_argument("-b", "--bed_file", help="input bed file name", default='NONE')
+	parser_bg.add_argument("-o", "--output", help="output file name", required=NOT_DEBUG)
 
   # create the parser for the "demultiplex" command
   parser_d = subparsers.add_parser('demultiplex')
   parser_d.add_argument('-i', '--input', action='store', nargs='?', help="Input fastq file (gzipped supported)", required=NOT_DEBUG)
   parser_d.add_argument('-o', '--output', action='store', nargs='?', help="Output folder", required=NOT_DEBUG)
-  parser_d.add_argument('-b', '--barcodeFile', action='store', nargs='?', help='Tab-delimited file, first column is barcode, second column is sample name', required=NOT_DEBUG)
+  parser_d.add_argument('-b', '--barcode_file', action='store', nargs='?', help='Tab-delimited file, first column is barcode, second column is sample name', required=NOT_DEBUG)
 
   # create the parser for the "bowtie2" command
   # parser_b = subparsers.add_parser('bowtie2')
@@ -83,18 +91,21 @@ def main():
   parser_r.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19, default is hg38')
   parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
-  if not DEBUG and len(sys.argv)==1:
+  if not DEBUG and len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
 
   args = parser.parse_args()
   print(args)
   
-  if args.command == "demultiplex":
+  if args.command == "background":
+    logger = initialize_logger(args.output + ".log", args)
+    background(logger, args.input, args.output, args.bed_file)
+  elif args.command == "demultiplex":
     if not os.path.isdir(args.output):
       Path(args.output).mkdir(parents=True)
     logger = initialize_logger(args.output + "/cpdseqer_demultiplex.log", args)
-    demultiplex(logger, args.input, args.output, args.barcodeFile, args)
+    demultiplex(logger, args.input, args.output, args.barcode_file, args)
   # elif args.command == 'bowtie2':
   #   logger = initialize_logger(args.output + ".cpdseqer_bowtie2.log", args)
   #   bowtie2(logger, args.input, args.output, args.database_prefix, args.thread)
@@ -110,6 +121,7 @@ def main():
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
     report(logger, args.input, args.group, args.output, args.block, args.db)
+
   
 if __name__ == "__main__":
     main()
