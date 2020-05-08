@@ -38,9 +38,9 @@ def main():
   
   # create the parser for the "background" command
   parser_bg = subparsers.add_parser('background')
-	parser_bg.add_argument("-i", "--input", help="input fasta file name", required=NOT_DEBUG)
-	parser_bg.add_argument("-b", "--bed_file", help="input bed file name", default='NONE')
-	parser_bg.add_argument("-o", "--output", help="output file name", required=NOT_DEBUG)
+  parser_bg.add_argument("-i", "--input", help="input fasta file name", required=NOT_DEBUG)
+  parser_bg.add_argument("-b", "--bed_file", help="input bed file name", default='NONE')
+  parser_bg.add_argument("-o", "--output", help="output file name", required=NOT_DEBUG)
 
   # create the parser for the "demultiplex" command
   parser_d = subparsers.add_parser('demultiplex')
