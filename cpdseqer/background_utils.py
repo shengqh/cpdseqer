@@ -25,6 +25,7 @@ def background(logger, fastaFile, outputFile, bedFile):
         lags.append(seqs[ii].description)
     
     dinu_types = ['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT', 'TT', 'TA', 'TC', 'TG']
+    dinu_type_set = set(dinu_types)
     result_all_all = pd.DataFrame(index=dinu_types)
 
     if bedFile != 'NONE':
@@ -62,6 +63,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                       types.append(words[3])
       
               for type_name in np.unique(np.array(types)):
+                  logger.info("Processing by type %s ..." % type_name)
                   result_all = {}
                   for jj in dinu_types:
                       result_all[jj] = 0
@@ -72,6 +74,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                   sub_end_pos = [end_pos[i] for i in aa]
       
                   for chr_ID in np.unique(np.array(sub_data_chrom)):
+                      logger.info("  processing by chromosome %s ..." % chr_ID)
                       aa = [index for index, value in enumerate(sub_data_chrom) if (value == chr_ID) ]
                       sub_sub_data_chrom = [sub_data_chrom[i] for i in aa]
                       sub_sub_start_pos = [sub_start_pos[i] for i in aa]
@@ -84,7 +87,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                               ref_seq = seq.seq[(sub_sub_start_pos[jj] - 1):(sub_sub_end_pos[jj])]
                               for idx in range((len(ref_seq) - 1)):
                                   dinu = ref_seq[idx:(idx + 2)]
-                                  if dinu in dinu_types:
+                                  if dinu in dinu_type_set:
                                       result_all[dinu] = result_all[dinu] + 1
       
                   result_all_all[type_name] = pd.DataFrame.from_dict(result_all, orient='index')
@@ -116,7 +119,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                           ref_seq = seq.seq[(sub_start_pos[jj] - 1):(sub_end_pos[jj])]
                           for idx in range((len(ref_seq) - 1)):
                               dinu = ref_seq[idx:(idx + 2)]
-                              if dinu in dinu_types:
+                              if dinu in dinu_type_set:
                                   result_all[dinu] = result_all[dinu] + 1
               result_all_all["Total"] = pd.DataFrame.from_dict(result_all, orient='index')
       
@@ -126,10 +129,11 @@ def background(logger, fastaFile, outputFile, bedFile):
             result_all[jj] = 0
         for ii in range(len(seqs)):
             seq = seqs[ii]
+            logger.info("Processing chromosomes %s ..." % seq.name)
             ref_seq = seq.seq
             for idx in range((len(ref_seq) - 1)):
                 dinu = ref_seq[idx:(idx + 2)]
-                if dinu in dinu_types:
+                if dinu in dinu_type_set:
                     result_all[dinu] = result_all[dinu] + 1
     
         result_all_all["Total"] = pd.DataFrame.from_dict(result_all, orient='index')
