@@ -6,7 +6,7 @@ import sys
 
 from .DinucleotideItem import DinucleotideItem
 from .CategoryItem import CategoryItem
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr
+from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, read_coordinate_file
 
 def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, category_index=-1, useSpace=False, addChr=False):
   check_file_exists(dinucleotideFileList)
@@ -28,16 +28,9 @@ def statistic(logger, dinucleotideFileList, outputFile, coordinateFileList, cate
     check_file_exists(coordinateFile)
     
     logger.info("Reading category file " + coordinateFile + " ...")
-      
-    with open(coordinateFile, "rt") as fin:
-      for line in fin:
-        parts = line.rstrip().split(delimit)
-        #print(parts)
-        chrom = "chr" + parts[0] if addChr else parts[0] 
-        catName = parts[category_index] if (category_index != -1 and category_index < len(parts)) else defCatName
-        #print(catName)
-        coordinates.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
-        #break
+    subcoordinates = read_coordinate_file(coordinateFile, defCatName, delimit, addChr)
+    
+    coordinates.extend(subcoordinates)
         
   catNames = sorted(list(set([ci.category for ci in coordinates])))
 

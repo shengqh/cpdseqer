@@ -56,3 +56,16 @@ def initialize_logger(logfile, args):
   logger.addHandler(handler)
  
   return(logger)
+
+def read_coordinate_file(file_name, defCatName, delimit='\t', add_chr=False):
+  result = []
+  with open(file_name, "rt") as fin:
+    for line in fin:
+      parts = line.rstrip().split(delimit)
+      #print(parts)
+      chrom = "chr" + parts[0] if addChr else parts[0] 
+      catName = parts[category_index] if (category_index != -1 and category_index < len(parts)) else defCatName
+      #print(catName)
+      result.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
+      
+  return(result)
