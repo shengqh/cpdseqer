@@ -84,7 +84,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                       if len(aa) > 0:
                           seq = seqs[int(aa[0])]
                           for jj in range(len(sub_sub_start_pos)):
-                              ref_seq = seq.seq[(sub_sub_start_pos[jj] - 1):(sub_sub_end_pos[jj])]
+                              ref_seq = str(seq.seq)[(sub_sub_start_pos[jj] - 1):(sub_sub_end_pos[jj])]
                               for idx in range((len(ref_seq) - 1)):
                                   dinu = ref_seq[idx:(idx + 2)]
                                   if dinu in dinu_type_set:
@@ -116,7 +116,7 @@ def background(logger, fastaFile, outputFile, bedFile):
                   if len(aa) > 0:
                       seq = seqs[int(aa[0])]
                       for jj in range(len(sub_start_pos)):
-                          ref_seq = seq.seq[(sub_start_pos[jj] - 1):(sub_end_pos[jj])]
+                          ref_seq = str(seq.seq)[(sub_start_pos[jj] - 1):(sub_end_pos[jj])]
                           for idx in range((len(ref_seq) - 1)):
                               dinu = ref_seq[idx:(idx + 2)]
                               if dinu in dinu_type_set:
@@ -129,8 +129,8 @@ def background(logger, fastaFile, outputFile, bedFile):
             result_all[jj] = 0
         for ii in range(len(seqs)):
             seq = seqs[ii]
-            logger.info("Processing chromosomes %s ..." % seq.name)
-            ref_seq = seq.seq
+            logger.info("Processing chromosome %s ..." % seq.name)
+            ref_seq = str(seq.seq)
             for idx in range((len(ref_seq) - 1)):
                 dinu = ref_seq[idx:(idx + 2)]
                 if dinu in dinu_type_set:
