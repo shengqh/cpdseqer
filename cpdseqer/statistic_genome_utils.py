@@ -20,7 +20,7 @@ def statistic_genome(logger, sampleListFile, groupDefinitionFile, outputFilePref
 
   checkFileMap(sampleMap)
 
-  countFileMap = {sample:sampleMap[sample] + ".count" for sample in sampleMap.keys()}
+  countFileMap = {sample:sampleMap[sample].replace(".bed.bgz", ".count") for sample in sampleMap.keys()}
   checkFileMap(countFileMap)
 
   sampleGroupMap = {}

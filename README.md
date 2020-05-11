@@ -160,7 +160,7 @@ The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/dinucleot
 
 |||
 |---|---|
-|Control.dinucleotide.bed.bgz|Control|
+|Control.bed.bgz|Control|
 |UV.dinucleotide.bed.bgz|UV|
 
 The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
@@ -173,10 +173,10 @@ The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/coordinate
 You can download example files as following scripts. The hg38_promoter.bed contains three columns only. So, Promoter (from  coordinates.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
 
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.dinucleotide.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.dinucleotide.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.dinucleotide.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.dinucleotide.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bed.bgz.tbi
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/dinucleotide.list
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/coordinates.list
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
