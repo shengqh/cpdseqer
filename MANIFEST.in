@@ -1,1 +1,8 @@
 include cpdseqer/*.bed
+include cpdseqer/*.r
+include cpdseqer/*.R
+include cpdseqer/*.Rmd
+include cpdseqer/*.txt
+include cpdseqer/*.count
+include cpdseqer/*.tsv
+
