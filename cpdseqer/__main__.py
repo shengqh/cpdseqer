@@ -10,6 +10,7 @@ from .bam2dinucleotide_utils import bam2dinucleotide
 from .statistic_utils import statistic
 from .position_utils import position
 from .report_utils import report
+from .statistic_genome_utils import statistic_genome
 from .__version__ import __version__
 from .common_utils import runCmd, initialize_logger
 
@@ -74,6 +75,15 @@ def main():
   parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
+  # create the parser for the "statistic" command
+  parser_s = subparsers.add_parser('statistic')
+  parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_s.add_argument('-c', '--coordinate_list_file', action='store', nargs='?', help='Input coordinate list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
+  parser_s.add_argument('--category_index', type=int, default=-1, nargs='?', help='Zero-based category column index in coordinate file')
+  parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
+  parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+
   # create the parser for the "position" command
   parser_f = subparsers.add_parser('position')
   parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
@@ -90,6 +100,14 @@ def main():
   parser_r.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count')
   parser_r.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19, default is hg38')
   parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+
+  # create the parser for the "statistic_genome" command
+  parser_sg = subparsers.add_parser('statistic_genome')
+  parser_sg.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_sg.add_argument('-g', '--group', action='store', nargs='?', help='Input group list file, first column is group (0 for control and 1 for case), second column is file name', required=NOT_DEBUG)
+  parser_sg.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count')
+  parser_sg.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19, default is hg38')
+  parser_sg.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv) == 1:
     parser.print_help()
@@ -121,6 +139,9 @@ def main():
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
     report(logger, args.input, args.group, args.output, args.block, args.db)
+  elif args.command == "statistic_genome":
+    logger = initialize_logger(args.output + ".log", args)
+    statistic_genome(logger, args.input, args.group, args.output, args.block, args.db)
 
   
 if __name__ == "__main__":

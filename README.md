@@ -111,7 +111,7 @@ for example:
 cpdseqer bam2dinucleotide \
   -i Control.bam \
   -g hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome.fa \
-  -o Control.dinucleotide.bed.bgz
+  -o Control
 ```
 
 You can download our example bam files:
