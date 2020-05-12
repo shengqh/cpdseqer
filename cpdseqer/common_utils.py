@@ -69,3 +69,31 @@ def read_coordinate_file(file_name, defCatName, delimit='\t', add_chr=False):
       result.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
       
   return(result)
+
+def write_r_script(outfilePrefix, rScript, optionMap={}):
+  targetScript = outfilePrefix + ".r"
+  optionMap["outfilePrefix"] = outfilePrefix
+  with open(targetScript, "wt") as fout:
+    for key in optionMap.keys():
+      fout.write("%s='%s'\n" % (key, optionMap[key]))
+
+    fout.write("setwd('%s')\n" % os.path.dirname(os.path.abspath(targetScript)))
+    
+    with open(rScript, "rt") as fin:
+      bFirstSetwd = True
+      for line in fin:
+        if line.startswith("setwd") and bFirstSetwd:
+          bFirstSetwd = False
+          continue
+
+        bInOption = False
+        for key in optionMap.keys():
+          if line.startswith(key + "="):
+            optionMap.pop(key)
+            bInOption = True
+            break
+
+        if not bInOption:
+          fout.write(line)
+
+  return(targetScript)

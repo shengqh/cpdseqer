@@ -1,12 +1,11 @@
 
-OutfilePrefix<-"test"
-setwd("")
+outfilePrefix<-"test"
+setwd(".")
 
 plot.pos = TRUE
 plot.mut = TRUE
 ctrl.default = FALSE
 
-library(knitr) ## kable
 library(data.table) ## fread
 library(dplyr)
 library(ggplot2)
@@ -43,7 +42,7 @@ info <- data.frame(chrom = factor(info$V1, levels = chrom_levels),
                    chromStart = rep(0, nrow(info)),
                    chromEnd = info$V2)
 
-pdf(paste0(OutfilePrefix, ".pdf"), width=7, height=7, onefile = T)
+pdf(paste0(outfilePrefix, ".pdf"), width=7, height=7, onefile = T)
 ## cases plot
 i<-1
 cnt.all <- NULL
@@ -74,7 +73,7 @@ for (i in 1:nrow(samples)) {
     theme(panel.grid.major = element_blank(),
           panel.grid.minor = element_blank(),
           plot.margin = margin(0.1, 10, 0.1, 0.1, "pt"))+
-    labs(x = "Genomic positions", y = NULL)
+    labs(x = "Genomic positions", y = NULL, title=sampleName)
   print(seg)
 
   df<-fread(countFile, sep="\t", header=T, data.table=F, stringsAsFactors = F)
@@ -110,7 +109,7 @@ for (i in 1:nrow(samples)) {
                         fill = factor(mut, levels = rev(level.mut))))+
     geom_bar(color = "black", stat = "identity", width = 0.8)+
     annotate(geom = "text", x = Inf, y = lab.pos, label = lab, size = 4) +
-    labs(x = NULL, y = NULL, title = NULL)+
+    labs(x = NULL, y = NULL, title = sampleName)+
     scale_y_continuous(expand = c(0.01,0),
                        labels = scales::percent)+
     scale_x_discrete(expand = c(0.035, 0))+
@@ -161,5 +160,5 @@ for (i in 1:nrow(case.cnt)) {
 }
 
 
-write.table(res.bit, file=paste0(OutputPrefix, ".txt"), sep="\t", row.names=F)
+write.table(res.bit, file=paste0(outfilePrefix, ".txt"), sep="\t", row.names=F)
 

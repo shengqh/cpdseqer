@@ -3,16 +3,16 @@ import sys
 import os
 from pathlib import Path
 
+from .__version__ import __version__
+from .common_utils import runCmd, initialize_logger
 from .background_utils import background
 from .demultiplex_utils import demultiplex
 # from .bowtie2_utils import bowtie2
 from .bam2dinucleotide_utils import bam2dinucleotide
 from .statistic_utils import statistic
-from .position_utils import position
 from .report_utils import report
-from .statistic_genome_utils import statistic_genome
-from .__version__ import __version__
-from .common_utils import runCmd, initialize_logger
+from .fig_genome_utils import fig_genome
+from .fig_position_utils import fig_position
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
@@ -38,13 +38,13 @@ def main():
   subparsers = parser.add_subparsers(dest="command")
   
   # create the parser for the "background" command
-  parser_bg = subparsers.add_parser('background')
+  parser_bg = subparsers.add_parser('background', help='Build background dinucleotide table based on genome sequence')
   parser_bg.add_argument("-i", "--input", help="input fasta file name", required=NOT_DEBUG)
   parser_bg.add_argument("-b", "--bed_file", help="input bed file name", default='NONE')
   parser_bg.add_argument("-o", "--output", help="output file name", required=NOT_DEBUG)
 
   # create the parser for the "demultiplex" command
-  parser_d = subparsers.add_parser('demultiplex')
+  parser_d = subparsers.add_parser('demultiplex', help='Perform demultiplex on raw fastq file')
   parser_d.add_argument('-i', '--input', action='store', nargs='?', help="Input fastq file (gzipped supported)", required=NOT_DEBUG)
   parser_d.add_argument('-o', '--output', action='store', nargs='?', help="Output folder", required=NOT_DEBUG)
   parser_d.add_argument('-b', '--barcode_file', action='store', nargs='?', help='Tab-delimited file, first column is barcode, second column is sample name', required=NOT_DEBUG)
@@ -57,7 +57,7 @@ def main():
   # parser_b.add_argument('-o', '--output', action='store', nargs='?', default="-", help="Output file", required=NOT_DEBUG)
 
   # create the parser for the "bam2dinucleotide" command
-  parser_p = subparsers.add_parser('bam2dinucleotide')
+  parser_p = subparsers.add_parser('bam2dinucleotide', help='Extract dinucleotide from bam file')
   parser_p.add_argument('-i', '--input', action='store', nargs='?', help='Input BAM file', required=NOT_DEBUG)
   parser_p.add_argument('-g', '--genome_seq_file', action='store', nargs='?', help='Input genome seq file', required=NOT_DEBUG)
   parser_p.add_argument('-q', '--mapping_quality', type=int, default=20, nargs='?', help='Minimum mapping quality of read (default 20)', required=False)
@@ -75,24 +75,6 @@ def main():
   parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
-  # create the parser for the "statistic" command
-  parser_s = subparsers.add_parser('statistic')
-  parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_s.add_argument('-c', '--coordinate_list_file', action='store', nargs='?', help='Input coordinate list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
-  parser_s.add_argument('--category_index', type=int, default=-1, nargs='?', help='Zero-based category column index in coordinate file')
-  parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
-  parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
-
-  # create the parser for the "position" command
-  parser_f = subparsers.add_parser('position')
-  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_f.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file', required=NOT_DEBUG)
-  parser_f.add_argument('-b', '--background_files', action='store', nargs='?', help='Background files, seprated by "," or set "auto" to use default')
-  parser_f.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
-  parser_f.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
-  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
-  
   # create the parser for the "report" command
   parser_r = subparsers.add_parser('report')
   parser_r.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
@@ -101,13 +83,23 @@ def main():
   parser_r.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19, default is hg38')
   parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
-  # create the parser for the "statistic_genome" command
-  parser_sg = subparsers.add_parser('statistic_genome')
+  # create the parser for the "stat_genome" command
+  parser_sg = subparsers.add_parser('fig_genome', help="Generate statistic figure on genome/chromosome level")
   parser_sg.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_sg.add_argument('-g', '--group', action='store', nargs='?', help='Input group list file, first column is group (0 for control and 1 for case), second column is file name', required=NOT_DEBUG)
   parser_sg.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count')
   parser_sg.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19, default is hg38')
   parser_sg.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+
+  # create the parser for the "position" command
+  parser_f = subparsers.add_parser('fig_position', help='Generate statistic figure on relative position in coordinate file')
+  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_f.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=NOT_DEBUG)
+  parser_f.add_argument('-b', '--background_file', action='store', nargs='?', help='Background dinucleotide file')
+  parser_f.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
+  parser_f.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
+  parser_f.add_argument('-t', '--test', action='store_true', help='Test the first 10000 coordinates only')
+  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv) == 1:
     parser.print_help()
@@ -133,16 +125,15 @@ def main():
   elif args.command == "statistic":
     logger = initialize_logger(args.output + ".log", args)
     statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
-  elif args.command == "position":
-    logger = initialize_logger(args.output + ".log", args)
-    position(logger, args.input, args.output, args.coordinate_file, args.background_files, args.space, args.add_chr)
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
     report(logger, args.input, args.group, args.output, args.block, args.db)
-  elif args.command == "statistic_genome":
+  elif args.command == "fig_genome":
     logger = initialize_logger(args.output + ".log", args)
-    statistic_genome(logger, args.input, args.group, args.output, args.block, args.db)
-
+    fig_genome(logger, args.input, args.group, args.output, args.block, args.db)
+  elif args.command == "fig_position":
+    logger = initialize_logger(args.output + ".log", args)
+    fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)
   
 if __name__ == "__main__":
     main()

@@ -10,8 +10,7 @@ import shutil
 from io import TextIOWrapper
 
 from .CategoryItem import CategoryItem
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr
-
+from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
 
 def readCoordinate(fin, addChr, delimit):
   result = []
@@ -21,44 +20,31 @@ def readCoordinate(fin, addChr, delimit):
     result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), None))
   return(result)
 
-def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalizedFiles=None, useSpace=False, addChr=False):
+def fig_position(logger, dinucleotideFileList, outputFile, coordinateFile, backgroundFile=None, useSpace=False, addChr=False, test=False):
+  background_name = "__BACKGROUND__"
+
+  logger.info("Reading dinucleotide file list ...")
   check_file_exists(dinucleotideFileList)
   dinucleotideFileMap = readFileMap(dinucleotideFileList)
+  logger.info(str(dinucleotideFileMap))
 
   if (coordinateFile == 'hg38') or (coordinateFile == 'hg19'):
     coordinateFile = os.path.join(os.path.dirname(__file__), "data", "nucleosome_%s_interval.zip" % coordinateFile)
+    useSpace = True
   check_file_exists(coordinateFile)
 
-  bNormalize = normalizedFiles != None
+  rScript = os.path.join( os.path.dirname(__file__), "fig_position.r")
+  if not os.path.exists(rScript):
+    raise Exception("Cannot find rscript %s" % rScript)
+  
+  targetScript = write_r_script(outputFile, rScript, {'inputFile':outputFile})
+
+  bNormalize = backgroundFile != None
   if bNormalize:
-    if normalizedFiles == "auto":
-      normFiles = [os.path.join(os.path.dirname(__file__), "data", 'Naked.1.count'), os.path.join(os.path.dirname(__file__), "data", 'Naked.2.count')]
-    else:
-      normFiles = normalizedFiles.split(',')
-
-    for normFile in normFiles:
-      check_file_exists(normFile)
-
-    backgroundMap = {}
-    for normFile in normFiles:
-      with open(normFile, "rt") as fin:
-        fin.readline()
-        for line in fin:
-          parts = line.rstrip().split('\t')
-          if parts[1] in backgroundMap:
-            backgroundMap[parts[1]] += int(parts[2])
-          else:
-            backgroundMap[parts[1]] = int(parts[2])
-    
-    meanCount = sum(backgroundMap.values()) / len(backgroundMap)
-    backgroundFactor = { key:(backgroundMap[key] / meanCount) for key in backgroundMap.keys() }
-    with open(outputFile + ".norm.txt", "wt") as fout:
-      fout.write("Dinucleotide\tCount\tFactor\n")
-      for dinu in sorted(backgroundMap.keys()):
-        fout.write("%s\t%d\t%.lf" % (dinu, backgroundMap[dinu], backgroundFactor[dinu]))
+    check_file_exists(backgroundFile)
+    dinucleotideFileMap[background_name] = backgroundFile
 
   logger.info("Reading coordinate file " + coordinateFile + " ...")
-      
   delimit = ' ' if useSpace else '\t'
   if coordinateFile.endswith(".zip"):
     internalFile = os.path.basename(coordinateFile).replace(".zip", ".txt")
@@ -93,7 +79,7 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
         parts = line.split('\t')
         chromMap[parts[0]] = 1
 
-    logger.info("Processing dinucleotide file " + dinucleotideFile + " ...")
+    logger.info("Processing dinucleotide file %s : %s ..." % (dinuName, dinucleotideFile))
     
     dinuMap = finalMap[dinuName]
 
@@ -103,6 +89,9 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
       count = count + 1
       if count % 10000 == 0:
         logger.info("%d / %d" % (count, len(coordinates)))
+
+        if test and count % 100000 == 0:
+          break
 
       if not catItem.reference_name in chromMap:
         continue
@@ -122,33 +111,32 @@ def position(logger, dinucleotideFileList, outputFile, coordinateFile, normalize
           continue
 
         indexMap = dinuMap[index]
-        
         if not dinucleotide in indexMap:
-          indexMap[dinucleotide] = diCount
+          indexMap[dinucleotide] = [1, diCount] # [siteCount, readCount]
         else:
-          indexMap[dinucleotide] = indexMap[dinucleotide] + diCount
-    
+          indexMap[dinucleotide][0] = indexMap[dinucleotide][0] + 1
+          indexMap[dinucleotide][1] = indexMap[dinucleotide][1] + diCount
+  
+  if bNormalize:
+    backgroundMap = finalMap.pop(background_name)
+
   logger.info("Writing to %s ..." % outputFile)
   with open(outputFile, "wt") as fout:
     if bNormalize:
-      fout.write("Sample\tPosition\tDinucleotide\tCount\tNormalizedCount\n")
+      fout.write("Sample\tPosition\tDinucleotide\tSiteCount\tSiteNormalizedCount\tReadCount\tReadNormalizedCount\n")
     else:
-      fout.write("Sample\tPosition\tDinucleotide\tCount\n")
-    for dinuName in sorted( dinucleotideFileMap.keys() ):      
+      fout.write("Sample\tPosition\tDinucleotide\tSiteCount\tReadCount\n")
+    for dinuName in sorted( finalMap.keys() ):      
       for index in range(0, maxIndex):
         dinucleotideMap = finalMap[dinuName][index]
         for k in sorted(dinucleotideMap.keys()):
           count = dinucleotideMap[k]
           if bNormalize:
-            normalizedCount = count / backgroundFactor[k] 
-            fout.write("%s\t%s\t%s\t%d\t%lf\n" % (dinuName, index, k, count, normalizedCount))       
+            backgroundCount = backgroundMap[index][k] if k in backgroundMap[index] else [1, 1]
+            fout.write("%s\t%s\t%s\t%d\t%lf\t%d\t%lf\n" % (dinuName, index, k, count[0], count[0] / backgroundCount[0], count[1], count[1] / backgroundCount[1]))       
           else:
-            fout.write("%s\t%s\t%s\t%d\n" % (dinuName, index, k, count))       
+            fout.write("%s\t%s\t%s\t%d\t%d\n" % (dinuName, index, k, count[0], count[1]))       
 
-  rScript = os.path.join( os.path.dirname(__file__), "position.r")
-  if not os.path.exists(rScript):
-    raise Exception("Cannot find rscript %s" % rScript)
-  
   cmd = "R --vanilla -f " + rScript + " --args " + os.path.abspath(outputFile) + " " + os.path.abspath(outputFile)
   runCmd(cmd, logger)
 

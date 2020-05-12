@@ -6,10 +6,10 @@ import sys
 import shutil
 
 from .CategoryItem import CategoryItem
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr
+from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
 from .__version__ import __version__
 
-def statistic_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, block, dbVersion):
+def fig_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, block, dbVersion):
   check_file_exists(sampleListFile)
   check_file_exists(groupDefinitionFile)
 
@@ -29,7 +29,7 @@ def statistic_genome(logger, sampleListFile, groupDefinitionFile, outputFilePref
       raise Exception("Sample %s not in group definition file %s" % (sampleName, groupDefinitionFile))
     sampleGroupMap[sampleName] = [sampleMap[sampleName], groupMap[sampleName]]
 
-  rScript = os.path.join( os.path.dirname(__file__), "statistic_genome.r")
+  rScript = os.path.join( os.path.dirname(__file__), "fig_genome.r")
   if not os.path.exists(rScript):
     raise Exception("Cannot find rScript %s" % rScript)
 
@@ -119,21 +119,7 @@ def statistic_genome(logger, sampleListFile, groupDefinitionFile, outputFilePref
           if totalCount > 0:
             fdinu.write("%s\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalCount))
 
-  targetScript = outputFilePrefix + ".r"
-  with open(targetScript, "wt") as fout:
-    fout.write("OutfilePrefix<-$s\n" % outputFilePrefix)
-    fout.write("setwd('%s')\n" % dirname(os.path.abspath(targetScript)))
-    with open(rScript, "rt") as fin:
-      bFirstOutfilePrefix = True
-      bFirstSetwd = True
-      for line in fin:
-        if line.startswith("OutfilePrefix<-") and bFirstOutfilePrefix:
-          bFirstOutfilePrefix = False
-          continue
-        if line.startswith("setwd") and bFirstSetwd:
-          bFirstSetwd = False
-          continue
-        fout.write(fin)
+  targetScript = write_r_script(outputFilePrefix, rScript)
         
   targetChromInfoFile =  os.path.join(targetFolder, "chromInfo.txt")
   shutil.copyfile(chromInfo_file, targetChromInfoFile)
