@@ -1,4 +1,7 @@
+# Originally named CPD.Rfunctions.R from 5/7/20 through 5/10/20.
+# UPDATE 5/11/20 Moved back to ./Rmd for testing ReadCount/SiteCount.
 # singleSample(): When only one (group of) sample is specified, performs Chisq test for overall 5 categories and one-vs-other test for four DINUCs.
+
 # INPUT smp: either file name or read-in data.frame for single sample. (When reg is specified, smp must be preprocessed to contain counts for the corresponding region.)
 # INPUT gn: string for genome: hg38,hg19,saccer3
 # INPUT reg: specifying the single region.
@@ -7,7 +10,7 @@
 # INPUT cnt5file='gn_reg_cnt5.tsv': one data file pre-storing count vectors for common regions of a few genomes we accommodate.
 # OUTPUT res$res: 5x6 test result table in character matrix.
 # OUTPUT res$unit: inform on the unit of sample counts used in statistical tests & presentation.
-singleSample <- function(smp,gn,reg=NULL,cnt5file='gn_reg_cnt5.tsv0',nDigit=4,unit2=c(1e6,1e3)) { #nDigit: number of significant digits.
+singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.tsv0',nDigit=4,unit2=c(1e6,1e3)) { #nDigit: number of significant digits.
 	if (!require(reshape2)) stop('Please install library reshape2 for dcast function')
 	gn <- tolower(gn)
 	DINUC4 <- c('TT','TC','CC','CT')
@@ -24,7 +27,7 @@ singleSample <- function(smp,gn,reg=NULL,cnt5file='gn_reg_cnt5.tsv0',nDigit=4,un
     p5gn <- c(p4gn,1-sum(p4gn))
     names(p5gn) <- c(DINUC4,'others')
 		if (!grepl(',',smp)) {
-			smpCnt <- collapse.cntFile(smp,chrs=NULL)
+			smpCnt <- collapse.cntFile(smp,cntType,chrs=NULL)
 		} else {
 			smpCnt <- collapseGrp2Smp(smp)
 		}
@@ -69,14 +72,14 @@ singleSample <- function(smp,gn,reg=NULL,cnt5file='gn_reg_cnt5.tsv0',nDigit=4,un
 # INPUT smp2: filename for region2-limited sample cnt file.
 # INPUT reg1 & reg2: to inform reference p5 vector. A region keyword or a count5 string (comma-separated).
 # NOTE smp1 & smp2: when supplied as multi-samples, smp1 & smp2 should be two groups of equal lengths. Haven't enforced such a pre-check, but it should be kept in mind.
-twoReg <- function(smp1,smp2,reg1,reg2,gn,cnt5file='gn_reg_cnt5.tsv',nDigit=4,unit2=c(1e6,1e3),DINUC4=c('TT','TC','CC','CT')) {
+twoReg <- function(smp1,smp2,reg1,reg2,gn,cntType='rCnt',cnt5file='gn_reg_cnt5.tsv',nDigit=4,unit2=c(1e6,1e3),DINUC4=c('TT','TC','CC','CT')) {
 	if (!grepl(',',smp1)) {
-		smpCnt1 <- collapse.cntFile(smp1,chrs=NULL)
+		smpCnt1 <- collapse.cntFile(smp1,cntType,chrs=NULL)
 	} else {
 		smpCnt1 <- collapseGrp2Smp(smp1)
 	}
 	if (!grepl(',',smp2)) {
-		smpCnt2 <- collapse.cntFile(smp2,chrs=NULL)
+		smpCnt2 <- collapse.cntFile(smp2,cntType,chrs=NULL)
 	} else {
 		smpCnt2 <- collapseGrp2Smp(smp2)
 	}
@@ -123,14 +126,14 @@ twoReg <- function(smp1,smp2,reg1,reg2,gn,cnt5file='gn_reg_cnt5.tsv',nDigit=4,un
 ### Five rows (DINUC4+Overall), 7 columns (exp,obs,p.exact,p.exact.adj,p.chisq,p.chisq.adj,1stVS2nd)
 # NOTE only chisquared test is employed for both overall and one-vs-others.
 # NOTE number of digits printed out in kable is adjustable via nDigit
-twoGrp <- function(smp1,smp2,nDigit=4,DINUC4=c('TT','TC','CC','CT'),unit2=c(1e6,1e3)) {
+twoGrp <- function(smp1,smp2,cntType='rCnt',nDigit=4,DINUC4=c('TT','TC','CC','CT'),unit2=c(1e6,1e3)) {
 	if (!grepl(',',smp1)) {
-		smpCnt1 <- collapse.cntFile(smp1,chrs=NULL)
+		smpCnt1 <- collapse.cntFile(smp1,cntType,chrs=NULL)
 	} else {
 		smpCnt1 <- collapseGrp2Smp(smp1)
 	}
 	if (!grepl(',',smp2)) {
-		smpCnt2 <- collapse.cntFile(smp2,chrs=NULL)
+		smpCnt2 <- collapse.cntFile(smp2,cntType,chrs=NULL)
 	} else {
 		smpCnt2 <- collapseGrp2Smp(smp2)
 	}
@@ -180,17 +183,26 @@ twoGrp <- function(smp1,smp2,nDigit=4,DINUC4=c('TT','TC','CC','CT'),unit2=c(1e6,
 }
 
 # collapse.cntFile(): Given one cnt filename, derive smpCnt (five cnts) vector.
-# INPUT: only one essential input - sample file name (.cnt)
-collapse.cntFile <- function(smp,chrs=NULL,DINUC4=c('TT','TC','CC','CT')) {
+# (interim) UPDATE 5/10/20: Enforce 3rd column named "ReadCount"
+# UPDATE 5/9/20: add option cntType with default value of rCount.
+# INPUT smp: sample file name (.cnt) or a data frame
+collapse.cntFile <- function(smp,cntType=c('rCnt','sCnt')[1],chrs=NULL,DINUC4=c('TT','TC','CC','CT')) {
 	if (!require(reshape2))
 		stop('Please install library reshape2 for dcast function')
 	if (length(as.vector(smp))==1)
 		smp <- read.delim(smp,as.is=T)
+	colnames(smp)[3] <- 'ReadCount' # UPDATE 5/10/20 to accomodate old-versioned CNT file.
 	if (!is.null(chrs))
 		smp <- smp[smp[,'Chromosome']%in%chrs,]
 	dinuc16 <- genPerm2()
 	smp <- smp[smp[,'Dinucleotide']%in%dinuc16,]
-	smp <- dcast(smp,Dinucleotide~Chromosome,value.var='Count')
+	if (cntType=='rCnt') {
+		smp <- dcast(smp,Dinucleotide~Chromosome,value.var='ReadCount')
+	} else if (cntType=='sCnt') {
+		smp <- dcast(smp,Dinucleotide~Chromosome,value.var='SiteCount')
+	} else {
+		stop('Dinucleotide count type must be either rCnt or sCnt!')
+	}
 	smpMat <- as.matrix(smp[,-1])
 	rownames(smpMat) <- smp$Dinucleotide
 	colnames(smpMat) <- colnames(smp)[-1]
@@ -199,6 +211,32 @@ collapse.cntFile <- function(smp,chrs=NULL,DINUC4=c('TT','TC','CC','CT')) {
 	smpCnt.5th <- sum(as.numeric(smpCnt0[setdiff(names(smpCnt0),DINUC4)]))
 	smpCnt <- c(smpCnt.4,others=smpCnt.5th)
 }
+# collapse16.cntFile(): Given one cnt filename, sum up counts for all 16 dinucleotide types.
+# INPUT smp: sample file name (.cnt) or a data frame
+collapse16.cntFile <- function(smp,cntType=c('rCnt','sCnt')[1],chrs=NULL,DINUC4=c('TT','TC','CC','CT')) {
+  if (!require(reshape2))
+    stop('Please install library reshape2 for dcast function')
+  if (length(as.vector(smp))==1)
+    smp <- read.delim(smp,as.is=T)
+	colnames(smp)[3] <- 'ReadCount' # UPDATE 5/10/20 to accomodate old-versioned CNT file.
+  if (!is.null(chrs))
+    smp <- smp[smp[,'Chromosome']%in%chrs,]
+  dinuc16 <- genPerm2()
+  smp <- smp[smp[,'Dinucleotide']%in%dinuc16,]
+  if (cntType=='rCnt') {
+    smp <- dcast(smp,Dinucleotide~Chromosome,value.var='ReadCount')
+  } else if (cntType=='sCnt') {
+    smp <- dcast(smp,Dinucleotide~Chromosome,value.var='SiteCount')
+  } else {
+    stop('Dinucleotide count type must be either rCnt or sCnt!')
+  }
+  smpMat <- as.matrix(smp[,-1])
+  rownames(smpMat) <- smp$Dinucleotide
+  colnames(smpMat) <- colnames(smp)[-1]
+  smpCnt <- apply(smpMat,1,function(x) sum(as.numeric(x),na.rm=T))
+  smpCnt
+}
+
 # genPerm2(): # generate permutations of two-tuples.
 genPerm2 <- function(vocab=c('A','T','G','C')) {
 	comb.2col <- t(combn(vocab,2))
