@@ -175,8 +175,10 @@ You can download example files as following scripts. The hg38_promoter.bed conta
 ```
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bed.bgz
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/UV.count
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bed.bgz
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/Control.count
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/dinucleotide.list
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/coordinates.list
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
@@ -187,30 +189,27 @@ wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 ## Draw position figure
 
 ```
-usage: cpdseqer position [-h] -i [INPUT] -c [COORDINATE_FILE]
-                         [-b [BACKGROUND_FILES]] [-s] [--add_chr] -o [OUTPUT]
+usage: cpdseqer fig_position [-h] -i [INPUT] -c [COORDINATE_FILE] [-b [BACKGROUND_FILE]] [-s] [--add_chr] [-t] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i [INPUT], --input [INPUT]
-                        Input dinucleotide list file, first column is file
-                        location, second column is file name
+                        Input dinucleotide list file, first column is file location, second column is file name
   -c [COORDINATE_FILE], --coordinate_file [COORDINATE_FILE]
-                        Input coordinate bed file
-  -b [BACKGROUND_FILES], --background_files [BACKGROUND_FILES]
-                        Background files, seprated by "," or set "auto" to use
-                        default
+                        Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)
+  -b [BACKGROUND_FILE], --background_file [BACKGROUND_FILE]
+                        Background dinucleotide file
   -s, --space           Use space rather than tab in coordinate files
   --add_chr             Add chr in chromosome name in coordinate file
+  -t, --test            Test the first 10000 coordinates only
   -o [OUTPUT], --output [OUTPUT]
                         Output file name
-
 ```
 
 for example, we will calculate the dinucleotide position in nucleosome:
 
 ```
-cpdseqer position -s -b auto -i dinucleotide.list -c hg38 -o cpd_position.txt
+cpdseqer position -s -b hg38_background.bed.bgz -i dinucleotide.list -c hg38 -o cpd_position.txt
 ```
 
 Here, you can input absolute coordinate file, or hg38/hg19. hg38 and hg19 indicates the nucleosome coordinate files which can be downloaded by:
@@ -221,39 +220,39 @@ wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg3
 
 ```
 
-If 'auto' is used as default background file, it will be replaced by the following two files:
+You can download hg38 and yeast background file from:
 
 ```
-wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/Naked.1.count
-wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/Naked.2.count
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.count
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.count
 ```
 
-## Get report
+## Draw genome/chromosome figure
 
 ```
-usage: cpdseqer report [-h] -i [INPUT] -g [GROUP] [-b [BLOCK]] [-d [DB]] -o
-                       [OUTPUT]
+usage: cpdseqer fig_genome [-h] -i [INPUT] -g [GROUP] [-b [BLOCK]] [-d [DB]] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i [INPUT], --input [INPUT]
-                        Input dinucleotide list file, first column is file
-                        location, second column is file name
+                        Input dinucleotide list file, first column is file location, second column is file name
   -g [GROUP], --group [GROUP]
-                        Input group list file, first column is group (0 for
-                        control and 1 for case), second column is file name
+                        Input group list file, first column is group (0 for control and 1 for case), second column is file name
   -b [BLOCK], --block [BLOCK]
                         Block size for summerize dinucleotide count
   -d [DB], --db [DB]    Input database version, hg38 or hg19, default is hg38
   -o [OUTPUT], --output [OUTPUT]
                         Output file name
-
 ```
 
 for example:
 
 ```
-cpdseqer report -i dinucleotide.list -g group_definition.txt -d hg38 -o cpd.report
+cpdseqer fig_genome -i dinucleotide.list -g group_definition.txt -d hg38 -o cpd.report
 ```
 
 [group_definition.txt](https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/group_definition.txt) contains two columns indicate case(1)/control(0) and sample name (separated by tab). The sample name in group_definition.txt should be identical to sample name in dinucleotide.list.
