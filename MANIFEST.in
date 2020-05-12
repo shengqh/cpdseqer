@@ -1,6 +1,4 @@
 include cpdseqer/*.r
 include cpdseqer/*.R
 include cpdseqer/*.Rmd
-include cpdseqer/data/*.txt
-include cpdseqer/data/*.bed
-include cpdseqer/data/*.zip
+include cpdseqer/data/*.*
