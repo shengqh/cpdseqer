@@ -209,7 +209,7 @@ optional arguments:
 for example, we will calculate the dinucleotide position in nucleosome:
 
 ```
-cpdseqer position -s -b hg38_background.bed.bgz -i dinucleotide.list -c hg38 -o cpd_position.txt
+cpdseqer fig_position -s -b hg38_background.bed.bgz -i dinucleotide.list -c hg38 -o cpd_position.txt
 ```
 
 Here, you can input absolute coordinate file, or hg38/hg19. hg38 and hg19 indicates the nucleosome coordinate files which can be downloaded by:
