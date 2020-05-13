@@ -14,7 +14,10 @@ def fig_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, bl
   check_file_exists(groupDefinitionFile)
 
   sampleMap = readFileMap(sampleListFile)
+  logger.info("sampleMap:" + str(sampleMap))
+
   groupMap = readFileMap(groupDefinitionFile)
+  logger.info("groupMap:" + str(groupMap))
 
   targetFolder = os.path.dirname(outputFilePrefix)
 
@@ -22,6 +25,7 @@ def fig_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, bl
 
   countFileMap = {sample:sampleMap[sample].replace(".bed.bgz", ".count") for sample in sampleMap.keys()}
   checkFileMap(countFileMap)
+  logger.info("countFileMap:" + str(countFileMap))
 
   sampleGroupMap = {}
   for sampleName in sampleMap.keys():
