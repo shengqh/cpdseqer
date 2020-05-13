@@ -84,7 +84,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
         chromStart = chromStart + block
 
   logger.info("Processing dinucleotide files ...")
-  targetConfigFile = outputFilePrefix + ".config.txt")
+  targetConfigFile = outputFilePrefix + ".config.txt"
   with open(targetConfigFile, "wt") as fout:
     fout.write("Group\tSample\tDinuFile\tCountFile\n")
     for item in items:
