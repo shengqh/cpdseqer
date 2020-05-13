@@ -1,0 +1,3 @@
+Name	File	Case
+Control	Control.bed.bgz	0
+UV	UV.bed.bgz	1
