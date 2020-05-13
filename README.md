@@ -234,14 +234,12 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.count
 ## Draw genome/chromosome figure
 
 ```
-usage: cpdseqer fig_genome [-h] -i [INPUT] -g [GROUP] [-b [BLOCK]] [-d [DB]] -o [OUTPUT]
+usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i [INPUT], --input [INPUT]
-                        Input dinucleotide list file, first column is file location, second column is file name
-  -g [GROUP], --group [GROUP]
-                        Input group list file, first column is group (0 for control and 1 for case), second column is file name
+                        Input configuration file
   -b [BLOCK], --block [BLOCK]
                         Block size for summerize dinucleotide count
   -d [DB], --db [DB]    Input database version, hg38 or hg19, default is hg38
@@ -252,22 +250,21 @@ optional arguments:
 for example:
 
 ```
-cpdseqer fig_genome -i dinucleotide.list -g group_definition.txt -d hg38 -o cpd.report
+cpdseqer fig_genome -i fig_genome.input.txt -d hg38 -o cpd.report
 ```
 
-[group_definition.txt](https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/group_definition.txt) contains two columns indicate case(1)/control(0) and sample name (separated by tab). The sample name in group_definition.txt should be identical to sample name in dinucleotide.list.
+[fig_genome.input.txt](https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/fig_genome.input.txt) contains three columns indicate name, file and group (1=case and 0=control) which are seprated by tab.
 
-|||
-|---|---|
-|0|Control|
-|1|UV|
+|Name|File|Case|
+|---|---|---|
+|Control|Control.bed.bgz|0|
+|UV|UV.bed.bgz|1|
 
-You can download group_definition file from:
+You can download it from:
 
 ```
-wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/group_definition.txt
+wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/fig_genome.input.txt
 ```
-
 
 # Running cpdseqer using singularity
 

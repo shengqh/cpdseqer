@@ -1,6 +1,8 @@
-
-outfilePrefix<-"test"
-setwd(".")
+inputFile='genome.config.txt'
+chromInfoFile='chromInfo.txt'
+block='100000'
+outfilePrefix='genome'
+setwd('/gpfs23/scratch/cqs/shengq2/guoyan/20191104_cpd_analysis/fig_genome')
 
 plot.pos = TRUE
 plot.mut = TRUE
@@ -11,19 +13,15 @@ library(dplyr)
 library(ggplot2)
 library(reshape2) ## acast
 
-samples <- read.delim("dinucleotide_file.list", sep = '\t', header = T, stringsAsFactors = F)
+samples <- read.delim(inputFile, sep = '\t', header = T, stringsAsFactors = F)
 
 if(nrow(samples) == 0) {
-  stop("No data in dinucleotide_file.list")
+  stop(paste0("No data in ", inputFile))
 }
 
 if(!all(samples$Group %in% c(0, 1))){
   stop("Group should be either 0 for control or 1 for case in dinucleotide_file.list")
 }
-
-optionTable <-read.delim("options.txt", sep="\t", header=T, stringsAsFactors = F)
-options<-optionTable$Value
-names(options)<-optionTable$Name
 
 controlSamples<-samples$Sample[samples$Group==0]
 caseSamples<-samples$Sample[samples$Group==1]
@@ -42,6 +40,7 @@ info <- data.frame(chrom = factor(info$V1, levels = chrom_levels),
                    chromStart = rep(0, nrow(info)),
                    chromEnd = info$V2)
 
+ctype = "Site"
 for (ctype in c("Site", "Read")){
   columnName = paste0(ctype, "Count")
   curPrefix = paste0(outfilePrefix, "_", columnName)
@@ -55,18 +54,18 @@ for (ctype in c("Site", "Read")){
     sampleName <- samples$Sample[i]
     sampleGroup <- samples$Group[i]
 
-    case <- fread(sampleFile, sep = "\t", header = F, data.table = F, stringsAsFactors = F)
-    case <- case[case$V1 %in% level.chr,]
-    case$V1<-factor(case$V1, levels=chrom_levels)
+    case <- fread(sampleFile, sep = "\t", header = T, data.table = F, stringsAsFactors = F)
+    case <- case[case$Chrom %in% level.chr,]
+    case$Chrom<-factor(case$Chrom, levels=chrom_levels)
 
     seg <- ggplot(data=info,aes(y = chrom, x = chromStart))+
       geom_segment(aes(y = chrom, yend = chrom, x = chromStart, xend = chromEnd),
                   lineend = "round", color = "Gainsboro", size = 5)+
       geom_segment(data = case,
-                  aes(y = V1, yend = V1, x = V2, xend = V3, color=V4),
+                  aes_string(y = "Chrom", yend = "Chrom", x = "Start", xend = "End", color=columnName),
                   lineend = "butt", size = 5)+
       scale_y_discrete(drop=FALSE)+
-      scale_color_gradient(high="DimGray",low="Gainsboro", name = paste0("Count per ", as.numeric(options["block"]) / 1000, " KB")) +
+      scale_color_gradient(high="DimGray",low="Gainsboro", name = paste0("Count per ", as.numeric(block) / 1000, " KB")) +
       scale_x_continuous(limits = c(0, 250e6),
                         expand = c(0, 2e6), ## expand dist = (maxlimit-minlimit)*a + b
                         breaks = seq(0, 250e6, by = 50e6),
@@ -76,14 +75,15 @@ for (ctype in c("Site", "Read")){
       theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
             plot.margin = margin(0.1, 10, 0.1, 0.1, "pt"))+
-      labs(x = "Genomic positions", y = NULL, title=sampleName)
+      labs(x = "Genomic positions", y = NULL, title=paste0("Sample: ", sampleName))
     print(seg)
 
     df<-fread(countFile, sep="\t", header=T, data.table=F, stringsAsFactors = F)
     df<-df[df$Chromosome %in% level.chr,]
     df<-df[df$Dinucleotide %in% level.mut,]
 
-    df<-dcast(df, Dinucleotide~Chromosome,value.var="Count")
+    df<-df[,c("Chromosome", "Dinucleotide", columnName)]
+    df<-dcast(df, Dinucleotide~Chromosome,value.var=columnName)
     rownames(df)<-df$Dinucleotide
     df<-df[,c(2:ncol(df))]
     
@@ -126,8 +126,8 @@ for (ctype in c("Site", "Read")){
   }
   dev.off()
 
-  controlSamples<-samples$Sample[samples$Grou==0]
-  caseSamples<-samples$Sample[samples$Grou==1]
+  controlSamples<-samples$Sample[samples$Group==0]
+  caseSamples<-samples$Sample[samples$Group==1]
 
   controls<-cnt.all[,colnames(cnt.all) %in% controlSamples,drop=F]
   controlCount<-apply(controls, 1, sum)

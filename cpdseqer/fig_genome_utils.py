@@ -16,8 +16,11 @@ class ConfigItem:
     self.count_file = dinucleotide_file.replace(".bed.bgz", ".count")
     self.is_case = is_case
   
+  def __repr__(self):
+    return self.__str__()
+
   def __str__(self):
-    return("name=%s, dinucleotide_file=%s, count_file=%s, is_case=%s" % (self.name, self.dinucleotide_file, self.count_file, str(self.is_case)))
+    return("[name=%s; dinucleotide_file=%s; count_file=%s; is_case=%s]" % (self.name, self.dinucleotide_file, self.count_file, self.is_case))
 
 def read_config_file(config_file):
   result = []
@@ -30,7 +33,7 @@ def read_config_file(config_file):
       parts = line.rstrip().split('\t')
       if len(parts) < len(headers):
         continue
-      result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index] == '1'))
+      result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index]))
   return(result)
 
 def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
@@ -41,6 +44,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
 
   for item in items:
     check_file_exists(item.dinucleotide_file)
+    check_file_exists(item.dinucleotide_file + ".tbi")
     check_file_exists(item.count_file)
 
   targetFolder = os.path.dirname(outputFilePrefix)
@@ -88,19 +92,14 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
   with open(targetConfigFile, "wt") as fout:
     fout.write("Group\tSample\tDinuFile\tCountFile\n")
     for item in items:
+      dinuName = item.name
+      dinuGroup = item.is_case
       dinuFile = item.dinucleotide_file
-      
-      dinuGroup = sampleGroupMap[dinuName][1]
       targetDinuFile = os.path.join(targetFolder, "%s_block%d.txt" % (os.path.basename(dinuFile), block))
-      fout.write("%s\t%s\t%s\t%s\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(countFileMap[dinuName])))
+      fout.write("%s\t%s\t%s\t%s\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file)))
 
-      #if os.path.isfile(targetDinuFile):
-      #  continue
-
-      idxFile = dinuFile + ".tbi"
-
-      check_file_exists(dinuFile)
-      check_file_exists(idxFile)
+      if os.path.isfile(targetDinuFile):
+        continue
 
       dinuMap = {}
       logger.info("Processing %s ..." % dinuFile)
@@ -129,17 +128,17 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
 
           if totalReadCount > 0:
             fdinu.write("%s\t%d\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalReadCount, totalSiteCount))
-
-  targetScript = write_r_script(outputFilePrefix, rScript)
         
   targetChromInfoFile =  os.path.join(targetFolder, "chromInfo.txt")
   shutil.copyfile(chromInfo_file, targetChromInfoFile)
 
-  with open(os.path.join(targetFolder, "options.txt"), "wt") as fout:
-    fout.write("Value\tName\n")
-    fout.write("%s\tsoftVersion\n" % __version__)
-    fout.write("%s\tdbVersion\n" % dbVersion)
-    fout.write("%d\tblock\n" % block)
+  options = {
+    'inputFile':targetConfigFile,
+    'chromInfoFile':targetChromInfoFile,
+    "block":block
+  }
+
+  targetScript = write_r_script(outputFilePrefix, rScript, options)
 
   cmd = "R --vanilla -f %s" % targetScript
   runCmd(cmd, logger)
