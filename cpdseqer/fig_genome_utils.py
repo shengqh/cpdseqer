@@ -9,29 +9,41 @@ from .CategoryItem import CategoryItem
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
 from .__version__ import __version__
 
-def fig_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, block, dbVersion):
-  check_file_exists(sampleListFile)
-  check_file_exists(groupDefinitionFile)
+class ConfigItem:
+  def __init__(self, name, dinucleotide_file, is_case ):
+    self.name = name
+    self.dinucleotide_file = dinucleotide_file
+    self.count_file = dinucleotide_file.replace(".bed.bgz", ".count")
+    self.is_case = is_case
+  
+  def __str__(self):
+    return("name=%s, dinucleotide_file=%s, count_file=%s, is_case=%s" % (self.name, self.dinucleotide_file, self.count_file, str(self.is_case)))
 
-  sampleMap = readFileMap(sampleListFile)
-  logger.info("sampleMap:" + str(sampleMap))
+def read_config_file(config_file):
+  result = []
+  with open(config_file, "rt") as fin:
+    headers = fin.readline().rstrip().split('\t')
+    name_index = headers.index("Name")
+    file_index = headers.index("File")
+    case_index = headers.index("Case")
+    for line in fin:
+      parts = line.rstrip().split('\t')
+      if len(parts) < len(headers):
+        continue
+      result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index] == '1'))
+  return(result)
 
-  groupMap = readFileMap(groupDefinitionFile)
-  logger.info("groupMap:" + str(groupMap))
+def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
+  check_file_exists(configFile)
+
+  items = read_config_file(configFile)
+  logger.info("Config:" + str(items))
+
+  for item in items:
+    check_file_exists(item.dinucleotide_file)
+    check_file_exists(item.count_file)
 
   targetFolder = os.path.dirname(outputFilePrefix)
-
-  checkFileMap(sampleMap)
-
-  countFileMap = {sample:sampleMap[sample].replace(".bed.bgz", ".count") for sample in sampleMap.keys()}
-  checkFileMap(countFileMap)
-  logger.info("countFileMap:" + str(countFileMap))
-
-  sampleGroupMap = {}
-  for sampleName in sampleMap.keys():
-    if sampleName not in groupMap:
-      raise Exception("Sample %s not in group definition file %s" % (sampleName, groupDefinitionFile))
-    sampleGroupMap[sampleName] = [sampleMap[sampleName], groupMap[sampleName]]
 
   rScript = os.path.join( os.path.dirname(__file__), "fig_genome.r")
   if not os.path.exists(rScript):
@@ -71,21 +83,19 @@ def fig_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, bl
         catItems.append(CategoryItem(chrom, chromStart, chromEnd, None))
         chromStart = chromStart + block
 
-  logger.info("Preparing dinucleotide files ...")
-  targetConfigFile = os.path.join(targetFolder, "dinucleotide_file.list")
+  logger.info("Processing dinucleotide files ...")
+  targetConfigFile = outputFilePrefix + ".config.txt")
   with open(targetConfigFile, "wt") as fout:
     fout.write("Group\tSample\tDinuFile\tCountFile\n")
-    for dinuName in sorted(sampleGroupMap.keys()):
-      dinuFile = sampleGroupMap[dinuName][0]
+    for item in items:
+      dinuFile = item.dinucleotide_file
+      
       dinuGroup = sampleGroupMap[dinuName][1]
       targetDinuFile = os.path.join(targetFolder, "%s_block%d.txt" % (os.path.basename(dinuFile), block))
-      targetCountFile = os.path.join(targetFolder, "%s_count.txt" % os.path.basename(dinuFile))
-      fout.write("%s\t%s\t%s\t%s\n" % (dinuGroup, dinuName, os.path.basename(targetDinuFile), os.path.basename(targetCountFile)))
+      fout.write("%s\t%s\t%s\t%s\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(countFileMap[dinuName])))
 
-      if os.path.isfile(targetDinuFile) and os.path.isfile(targetCountFile) :
-        continue
-
-      shutil.copyfile(countFileMap[dinuName], targetCountFile)
+      #if os.path.isfile(targetDinuFile):
+      #  continue
 
       idxFile = dinuFile + ".tbi"
 
@@ -93,35 +103,32 @@ def fig_genome(logger, sampleListFile, groupDefinitionFile, outputFilePrefix, bl
       check_file_exists(idxFile)
 
       dinuMap = {}
-      logger.info("Preparing %s ..." % dinuFile)
+      logger.info("Processing %s ..." % dinuFile)
       with open(targetDinuFile, "wt") as fdinu:
+        fdinu.write("Chrom\tStart\tEnd\tReadCount\tSiteCount\n")
         tb = tabix.open(dinuFile)
 
         count = 0
-        lastChrom = ""
         for catItem in catItems:
           count = count + 1
           if count % 10000 == 0:
             logger.info("%d / %d" % (count, len(catItems)))
 
-          if catItem.reference_name != lastChrom:
-            if lastChrom in chromLengthMap:
-              fdinu.write("%s\t%d\t%d\t%d\n" % (lastChrom, chromLengthMap[lastChrom] - 1, chromLengthMap[lastChrom], 0))
-            lastChrom = catItem.reference_name
-          
           #logger.info("Processing %s:%d-%d ..." %(catItem.reference_name, catItem.reference_start, catItem.reference_end))
           tbiter = tb.query(catItem.reference_name, catItem.reference_start, catItem.reference_end)
           records = [record for record in tbiter]
-          totalCount = 0
+          totalReadCount = 0
+          totalSiteCount = 0
           for record in records:
             dinucleotide = record[3]
             diCount = int(record[4])
             if diCount == 0:
               diCount = 1
-            totalCount += diCount
+            totalReadCount += diCount
+            totalSiteCount += 1
 
-          if totalCount > 0:
-            fdinu.write("%s\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalCount))
+          if totalReadCount > 0:
+            fdinu.write("%s\t%d\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalReadCount, totalSiteCount))
 
   targetScript = write_r_script(outputFilePrefix, rScript)
         
