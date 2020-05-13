@@ -5,7 +5,6 @@ from pathlib import Path
 
 from .__version__ import __version__
 from .common_utils import runCmd, initialize_logger
-from .background_utils import background
 from .demultiplex_utils import demultiplex
 # from .bowtie2_utils import bowtie2
 from .bam2dinucleotide_utils import bam2dinucleotide
@@ -37,12 +36,6 @@ def main():
   
   subparsers = parser.add_subparsers(dest="command")
   
-  # create the parser for the "background" command
-  parser_bg = subparsers.add_parser('background', help='Build background dinucleotide table based on genome sequence')
-  parser_bg.add_argument("-i", "--input", help="input fasta file name", required=NOT_DEBUG)
-  parser_bg.add_argument("-b", "--bed_file", help="input bed file name", default='NONE')
-  parser_bg.add_argument("-o", "--output", help="output file name", required=NOT_DEBUG)
-
   # create the parser for the "demultiplex" command
   parser_d = subparsers.add_parser('demultiplex', help='Perform demultiplex on raw fastq file')
   parser_d.add_argument('-i', '--input', action='store', nargs='?', help="Input fastq file (gzipped supported)", required=NOT_DEBUG)
@@ -108,10 +101,7 @@ def main():
   args = parser.parse_args()
   print(args)
   
-  if args.command == "background":
-    logger = initialize_logger(args.output + ".log", args)
-    background(logger, args.input, args.output, args.bed_file)
-  elif args.command == "demultiplex":
+  if args.command == "demultiplex":
     if not os.path.isdir(args.output):
       Path(args.output).mkdir(parents=True)
     logger = initialize_logger(args.output + "/cpdseqer_demultiplex.log", args)

@@ -1,4 +1,3 @@
-from .background_utils import background
 from .demultiplex_utils import demultiplex
 # from .bowtie2_utils import bowtie2
 from .bam2dinucleotide_utils import bam2dinucleotide
