@@ -37,18 +37,18 @@ for (assignment in optAssignments) {
 }
 
 #scenario='Statistical Comparison'
-if (exists('sceCmmd')) { # Triage based on variable sceCmmd: {stat_sce1,stat_sce2,stat_sce3}
-	if (sceCmmd=='stat_sce1') { # NOTE: later sceCmmd can drop suffix .R
+if (exists('scenario')) { # Triage based on variable sceCmmd: {stat_sce1,stat_sce2,stat_sce3}
+	if (scenario=='sce1') { # NOTE: later sceCmmd can drop suffix .R
 		scenario='Compare one sample with reference genome'
     if (!exists('smp')) stop('Scenario 1 (comparing one sample against reference) requires one sample\'s CNT file!')
 		feedback=paste(c('**Sample** **CNT**: *',smp,'*; **Genome**: *',gn,'*; **CountType**: *',cntType,'*; **Region**: *',reg,'*'),collapse='')
 		res0 <- singleSample(smp,gn,reg,cntType=cntType,cnt5file=cnt5file,nDigit=3)	
-	} else if (sceCmmd=='stat_sce2') {
+	} else if (scenario=='sce2') {
 		scenario='Compare two regions in a sample'
 		if (!exists('smp1')|!exists('smp2')) stop('Scenario 2 (comparing two regions) requires two regions\' CNT files!')
 		feedback=paste(c('**Region1_CNT**: *',smp1,'*; **Region2_CNT**: *',smp2,'*; **Genome**: *',gn,'*; **CountType**: *',cntType,'*; **Region1_reference**: *',reg1,'*; **Region2_reference**: *',reg2,'*'),collapse='')
 		res0 <- twoReg(smp1,smp2,reg1,reg2,gn,cntType=cntType,cnt5file=cnt5file)
-	} else if (sceCmmd=='stat_sce3') {
+	} else if (scenario=='sce3') {
     scenario='Compare two samples'
     if (!exists('smp1')|!exists('smp2')) stop('Scenario 3 (comparing two samples) requires two samples\' CNT files!')
 		feedback=paste(c('**Sample1_CNT**: *',smp1,'*; **Sample2_CNT**: *',smp2,'*; **CountType**: *',cntType,'*'),collapse='')
