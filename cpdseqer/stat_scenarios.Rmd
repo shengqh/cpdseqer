@@ -94,6 +94,7 @@ kable(res)
 * __Compare two (groups of) samples, with or without restriction to a region__
 
 In all scenarios, a region can be designated as a keyword, such as 'intron' or 'exon,' or it can be specified as a vector of dinucleotide frequencies in the reference across five categories (see below).
+
 ## Two kinds of statistical tests and test directionality
 For each comparison scenarios, we present results of two kinds of statistical tests: a Chi-squared test and an exact test. Whereas Chi-squared test is always implemented for every scenario and the modalities involved, the exact test varies between Binomial test and Hypergeometric test (Fisher’s exact test). The Chi-squared test always returns a two-tailed p-value, whereas the exact test returns a one-tailed p-value.
 
