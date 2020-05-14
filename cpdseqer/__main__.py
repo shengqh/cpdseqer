@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .__version__ import __version__
 from .common_utils import runCmd, initialize_logger
+from .background_utils import background
 from .demultiplex_utils import demultiplex
 # from .bowtie2_utils import bowtie2
 from .bam2dinucleotide_utils import bam2dinucleotide
@@ -12,6 +13,7 @@ from .statistic_utils import statistic
 from .report_utils import report
 from .fig_genome_utils import fig_genome
 from .fig_position_utils import fig_position
+from .uv_comp_utils import uv_comp_genome
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
@@ -35,7 +37,13 @@ def main():
   NOT_DEBUG = not DEBUG
   
   subparsers = parser.add_subparsers(dest="command")
-  
+
+  # create the parser for the "background" command
+  parser_b = subparsers.add_parser('background', help='Calculate background dinucleotide count in genome sequence')
+  parser_b.add_argument("-i", "--input", help = "Input fasta file", required=True)
+  parser_b.add_argument("-b", "--bed", help = "Input bed file (optional)", default='NONE')
+  parser_b.add_argument("-o", "--output", help = "Output file", required=False)
+
   # create the parser for the "demultiplex" command
   parser_d = subparsers.add_parser('demultiplex', help='Perform demultiplex on raw fastq file')
   parser_d.add_argument('-i', '--input', action='store', nargs='?', help="Input fastq file (gzipped supported)", required=NOT_DEBUG)
@@ -92,6 +100,12 @@ def main():
   parser_f.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_f.add_argument('-t', '--test', action='store_true', help='Test the first 10000 coordinates only')
   parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+
+  parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample and reference genome background')
+  parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input reference genome version, hg38/hg19/saccer3 (default hg38)')
+  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv) == 1:
     parser.print_help()
@@ -100,7 +114,10 @@ def main():
   args = parser.parse_args()
   print(args)
   
-  if args.command == "demultiplex":
+  if args.command == "background":
+    logger = initialize_logger(args.output + ".log", args)
+    background(args.input, args.bed, args.output)
+  elif args.command == "demultiplex":
     if not os.path.isdir(args.output):
       Path(args.output).mkdir(parents=True)
     logger = initialize_logger(args.output + "/cpdseqer_demultiplex.log", args)
@@ -123,6 +140,9 @@ def main():
   elif args.command == "fig_position":
     logger = initialize_logger(args.output + ".log", args)
     fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)
+  elif args.command == "uv_comp_genome":
+    logger = initialize_logger(args.output + ".log", args)
+    uv_comp_genome(logger, args.input, args.output, args.db, args.count_type)
   
 if __name__ == "__main__":
     main()
