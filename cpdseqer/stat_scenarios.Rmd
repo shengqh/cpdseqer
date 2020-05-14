@@ -1,5 +1,5 @@
 ---
-title: "CPDseqer Statistical Analysis Report"
+title: "CPDseqer Data Analysis Report"
 date: "`r format(Sys.time())`"
 output:
   html_document:
