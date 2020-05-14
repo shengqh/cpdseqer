@@ -97,3 +97,31 @@ def write_r_script(outfilePrefix, rScript, optionMap={}):
           fout.write(line)
 
   return(targetScript)
+
+def write_rmd_script(outfilePrefix, rmdScript, optionMap={}):
+  targetScript = outfilePrefix + ".rmd"
+
+  with open(targetScript, "wt") as fout:
+    with open(rmdScript, "rt") as fin:
+      for line in fin:
+        if line.startswith("```"):
+          fout.write(line)
+          for key in optionMap.keys():
+            fout.write("%s='%s'\n" % (key, optionMap[key]))
+          fout.write("\n")
+          break
+        else:
+          fout.write(line)
+
+      for line in fin:
+        bInOption = False
+        for key in optionMap.keys():
+          if line.startswith(key + "=") or line.startswith(key + "<-"):
+            optionMap.pop(key)
+            bInOption = True
+            break
+
+        if not bInOption:
+          fout.write(line)
+
+  return(targetScript)
