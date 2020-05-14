@@ -93,12 +93,11 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
         seqlen = len(seq)
         chrDinuItems = chrDinuMap[id]
         for di in chrDinuItems:
-          if di.reference_name == record.id:
-            if di.reference_start >= 0 and di.reference_end <= seqlen:
-              dinu = seq[di.reference_start:di.reference_end]
-              if di.strand == "+":
-                dinu = str(Seq(dinu).reverse_complement())
-              di.dinucleotide = dinu
+          if di.reference_start >= 0 and di.reference_end <= seqlen:
+            dinu = seq[di.reference_start:di.reference_end].upper()
+            if di.strand == "+":
+              dinu = str(Seq(dinu).reverse_complement())
+            di.dinucleotide = dinu
   
   outputFile = outputPrefix + ".bed.bgz"
   countMap = OrderedDict()
