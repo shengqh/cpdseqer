@@ -63,7 +63,8 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
     raise Exception("I don't understand dbVersion: %s" % dbVersion)
 
   level_chr = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
-  level_mut = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
+  #level_mut = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
+  level_mut = set(['CC', 'CT', 'TC', 'TT'])
 
   logger.info("Reading chromosome length from: %s ..." % chromInfo_file)
   catItems = []# List<CategoryItem>
@@ -98,8 +99,8 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
       targetDinuFile = os.path.join(targetFolder, "%s_block%d.txt" % (os.path.basename(dinuFile), block))
       fout.write("%s\t%s\t%s\t%s\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file)))
 
-      if os.path.isfile(targetDinuFile):
-        continue
+      #if os.path.isfile(targetDinuFile):
+      #  continue
 
       dinuMap = {}
       logger.info("Processing %s ..." % dinuFile)
@@ -120,6 +121,9 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
           totalSiteCount = 0
           for record in records:
             dinucleotide = record[3]
+            if dinucleotide not in level_mut:
+              continue
+
             diCount = int(record[4])
             if diCount == 0:
               diCount = 1
