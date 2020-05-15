@@ -2,6 +2,7 @@ import os
 import os.path
 import logging
 import errno
+import shutil
 
 def check_file_exists(file):
   if not os.path.exists(file):
@@ -57,9 +58,9 @@ def initialize_logger(logfile, args):
  
   return(logger)
 
-def read_coordinate_file(file_name, defCatName, delimit='\t', add_chr=False):
+def read_coordinate_file(fileName, defCatName, delimit='\t', add_chr=False):
   result = []
-  with open(file_name, "rt") as fin:
+  with open(fileName, "rt") as fin:
     for line in fin:
       parts = line.rstrip().split(delimit)
       #print(parts)
@@ -98,9 +99,27 @@ def write_r_script(outfilePrefix, rScript, optionMap={}):
 
   return(targetScript)
 
-def write_rmd_script(outfilePrefix, rmdScript, optionMap={}):
-  targetScript = outfilePrefix + ".rmd"
+def write_rmd_script(outfilePrefix, rmdScript, optionMap={}, copyRFunction=True, optionsToIndividualFile=True):
+  if not os.path.exists(rmdScript):
+    raise Exception("Cannot find file %s" % rmdScript)
 
+  if copyRFunction:
+    rFunScript = os.path.join( os.path.dirname(__file__), "Rfunctions.R")
+    if not os.path.exists(rFunScript):
+      raise Exception("Cannot find rScript %s" % rFunScript)
+
+    targetFolder = os.path.dirname(os.path.abspath(outfilePrefix))
+    targetRFunScript =  os.path.join(targetFolder, "Rfunctions.R")
+    shutil.copyfile(rFunScript, targetRFunScript)
+
+  if optionsToIndividualFile:
+    optionToIndividualFileName = outfilePrefix + ".options"
+    with open(optionToIndividualFileName, "wt") as fout:
+      for key in sorted(optionMap.keys()):
+        fout.write("%s\t%s\n" % (key, optionMap[key]))
+    optionMap = {"option_file": os.path.basename(optionToIndividualFileName)}
+
+  targetScript = outfilePrefix + ".rmd"
   with open(targetScript, "wt") as fout:
     with open(rmdScript, "rt") as fin:
       for line in fin:
