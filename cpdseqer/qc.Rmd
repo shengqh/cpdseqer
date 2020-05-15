@@ -17,13 +17,14 @@ output:
 ---
 
 ```{r setup, include=FALSE}
+option_file="QC.options.txt"
 knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
 library(knitr) # kable
 library(reshape2) # dcast
 source('Rfunctions.R')
 ```
 ```{r stat, echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
-opts <- read.delim('QC.options.txt',head=F,as.is=T)
+opts <- read.delim(option_file,head=F,as.is=T)
 optAssignments <- paste0(opts[,1],'=\'',opts[,2],'\'')
 sample <- 'Some Sample'
 cntType <- 'rCnt'
