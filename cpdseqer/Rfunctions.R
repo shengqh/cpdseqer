@@ -1,5 +1,4 @@
-# Originally named CPD.Rfunctions.R from 5/7/20 through 5/10/20.
-# UPDATE 5/11/20 Moved back to ./Rmd for testing ReadCount/SiteCount.
+# Combined from three Rscripts on 05/13/20: Rfunctions.R, QC.R, QC.plot.R.
 # singleSample(): When only one (group of) sample is specified, performs Chisq test for overall 5 categories and one-vs-other test for four DINUCs.
 
 # INPUT smp: either file name or read-in data.frame for single sample. (When reg is specified, smp must be preprocessed to contain counts for the corresponding region.)
@@ -197,9 +196,9 @@ collapse.cntFile <- function(smp,cntType=c('rCnt','sCnt')[1],chrs=NULL,DINUC4=c(
 	dinuc16 <- genPerm2()
 	smp <- smp[smp[,'Dinucleotide']%in%dinuc16,]
 	if (cntType=='rCnt') {
-		smp <- dcast(smp,Dinucleotide~Chromosome,value.var='ReadCount')
+		smp <- reshape2::dcast(smp,Dinucleotide~Chromosome,value.var='ReadCount')
 	} else if (cntType=='sCnt') {
-		smp <- dcast(smp,Dinucleotide~Chromosome,value.var='SiteCount')
+		smp <- reshape2::dcast(smp,Dinucleotide~Chromosome,value.var='SiteCount')
 	} else {
 		stop('Dinucleotide count type must be either rCnt or sCnt!')
 	}
@@ -224,9 +223,9 @@ collapse16.cntFile <- function(smp,cntType=c('rCnt','sCnt')[1],chrs=NULL,DINUC4=
   dinuc16 <- genPerm2()
   smp <- smp[smp[,'Dinucleotide']%in%dinuc16,]
   if (cntType=='rCnt') {
-    smp <- dcast(smp,Dinucleotide~Chromosome,value.var='ReadCount')
+    smp <- reshape2::dcast(smp,Dinucleotide~Chromosome,value.var='ReadCount')
   } else if (cntType=='sCnt') {
-    smp <- dcast(smp,Dinucleotide~Chromosome,value.var='SiteCount')
+    smp <- reshape2::dcast(smp,Dinucleotide~Chromosome,value.var='SiteCount')
   } else {
     stop('Dinucleotide count type must be either rCnt or sCnt!')
   }
@@ -320,5 +319,177 @@ convert.cntUnit <- function(cnt0,unit2=c(1e6,1e3)) {
 }
 
 
+################################################################################################
+############################ QC functions below ################################################
+################################################################################################
+
+
+# efficiency(): Calculate efficiency of a single sample (CNT file).
+# smp: sample CNT file or a 6-columned bed data frame.
+# cntType: allow toggling between rCnt (default) & sCnt.
+efficiency <- function(smp,cntType=c('rCnt','sCnt')[1],nDigit=3) {
+	DINUC4=c('TT','TC','CC','CT')
+	if (length(as.vector(smp))==1) {
+		cnt5 <- collapse.cntFile(smp,cntType)
+	} else { # smp is a bed data.frame
+		cnt16 <- bed2cnt(smp,cntType)
+		cnt5 <- c(cnt16[DINUC4],sum(cnt16[setdiff(names(cnt16),DINUC4)],na.rm=T))		
+	}
+	dinuc4 <- sum(cnt5[DINUC4],na.rm=T)
+	eff <- sum(dinuc4,na.rm=T)/sum(cnt5,na.rm=T)
+	eff <- signif(eff,nDigit)
+	eff 
+}
+
+# contrast(): Calculate contrast for a single sample (CNT file).
+# smp: sample CNT file or a 6-columned bed data frame.
+# cntType: allow toggling between rCnt (default) & sCnt.
+contrast <- function(smp,cntType=c('rCnt','sCnt')[1],nDigit=3) {
+	if (length(as.vector(smp))==1) {
+		cnt16 <- collapse16.cntFile(smp,cntType)
+	} else {
+		cnt16 <- bed2cnt(smp,cntType)
+	}
+	cntTT <- as.numeric(cnt16['TT']) # Removed name of value
+	cnt0 <- as.numeric(cnt16['AA'])
+	if (cnt0>0) {
+		cont <- cntTT/cnt0 
+	} else {
+		cont <- NA
+	}
+	cont <- signif(cont,nDigit)
+	cont
+}
+
+# symmetry(): to derive 7*2 values for subsequent symmetry plotting.
+# INPUT bgz: BGZ file name.
+# OUTPUT sym7: counts of TT,TC,CC,CT,DINUC4, efficiency, and contrast. One series for + strand, the other for - strand. 
+symmetry <- function(bgz,cntType=c('rCnt','sCnt')[1],nDigit=3) {
+	if (!require(data.table)) {
+		warning('No data.table available; time-consuming to read in BGZ files!')
+		bed <- read.delim(bgz,header=F,as.is=T)
+	}	else {
+		bed <- fread(cmd=paste0(c('zcat',bgz),collapse=' '),header=F,data.table=F)
+	}
+	colnames(bed) <- c('Chromosome','start0','End','Dinucleotide','Count','strand') #start0 - open start point.
+	bedP <- bed[bed[,'strand']=='+',]
+	bedN <- bed[bed[,'strand']=='-',]
+	cnt16P <- bed2cnt(bedP,cntType)
+	cnt16N <- bed2cnt(bedN,cntType)
+	DINUC4=c('TT','TC','CC','CT')
+	cnt4 <- rbind(cnt16P[DINUC4],cnt16N[DINUC4])
+ 	eff <- sapply(list(bedP,bedN),efficiency,cntType,nDigit)
+	cont <- sapply(list(bedP,bedN),contrast,cntType,nDigit)
+	sym7 <- cbind(cnt4,rowSums(cnt4),eff,cont)
+	colnames(sym7) <- c(DINUC4,'DINUC4','Efficiency','Contrast')
+	rownames(sym7) <- c('Forward','Reverse')
+	list(sym7=sym7,bed=bed)	
+}
+
+# bed2cnt(): derive counts for 16 dinucs from a bgz-formatted bed data.frame.
+### Accompolishes second task of bam2dinucleotide (.count) and collapse.cntFile() task.
+# INPUT bed: data.frame of 6 cols - c('Chromosome','start0','End','Dinucleotide','Count','strand') #start0 - open start point.
+# INPUT chrs can be set as paste0('chr',c(1:22,c('X','Y','M')))
+bed2cnt <- function(bed,cntType=c('rCnt','sCnt')[1],chrs=NULL) {
+  #library(reshape2)
+	if (!is.null(chrs))
+	  bed <- bed[bed[,1]%in%chrs,]
+	dinuc16 <- genPerm2()
+	bed <- bed[bed[,'Dinucleotide']%in%dinuc16,]
+	if (cntType=='rCnt') {
+	  cnt <- tapply(bed$Count,bed[,'Dinucleotide'],sum) #by is also OK
+	} else if (cntType=='sCnt') {
+		cnt <- tapply(bed$Count,bed[,'Dinucleotide'],length) #by is also OK
+	} else {
+		stop('Dinucleotide count type must be either rCnt or sCnt!')
+	}
+	cnt <- cnt[dinuc16]
+	cnt
+}
+#smp <- commandArgs(T)
+#symRes <- symmetry('case1.bgz')
+#bed <- symRes$bed
+#sym7 <- symRes$sym7
+
+# plot_EfforCont(): Plot left-and-right two panels for Eff & Cont, respectively.
+### NOTE: The following four reference intervals are determined from ten human CPD-seq samples as of May 2020.
+EffR.r=c(0.576,0.813) #EffRange.rCnt
+EffR.s=c(0.575,0.805) #EffRange.sCnt
+ContR.r=c(7.73,23.8) #ContRange.rCnt
+ContR.s=c(7.47,23.2) #ContRange.sCnt
+plot_EffCont <- function(eff2,cont2,sample='Sample',EffRange.rCnt=EffR.r,EffRange.sCnt=EffR.s,ContRange.rCnt=ContR.r,ContRange.sCnt=ContR.s) {
+	names(eff2) <- names(cont2) <- c('by_ReadCount','by_SiteCount')
+	layout(matrix(1:2,nr=1))
+	plot_DotByStem(eff2,sample=sample,index='Efficiency',range.rCnt=EffRange.rCnt,range.sCnt=EffRange.sCnt)
+	plot_DotByStem(cont2,sample=sample,index='Contrast',range.rCnt=ContRange.rCnt,range.sCnt=ContRange.sCnt)
+}
+
+# plot_DotByStem(): plot stem-and-dot figure for one index, either Efficiency or Contrast.
+# INPUT indexVal: two values of the index, named c('by_ReadCount','by_SiteCount')
+# INPUT range.rCnt (byReadCount) of Efficiency out of 10 human samples: c(0.576,0.813)
+# INPUT range.rCnt (byReadCount) of Contrast out of 10 human samples: c(7.7,23.8) 
+
+plot_DotByStem <- function(indexVal,range.rCnt=c(0.576,0.813),range.sCnt=c(0.576,0.813), sample='Sample',index='Efficiency') {
+	par(mar=c(6,8,4,2),cex.main=1.5,cex.axis=1.5,cex.lab=1.5,bty='l')#mar=c(6,8,4,2),
+	xInterval <- switch(index,
+		Efficiency=c(0,1),
+		Contrast=c(0,30)
+	)
+	x.offset <- switch(index,
+		Efficiency=-0.25,
+		Contrast=-5
+	)
+		plot(xInterval,c(0,3),type='n',xlab=index,ylab='',main=sample,axes=F)
+	axis(side=1)
+	#axis(side=2,at=c(0:3),labels=c('',rev(names(indexVal)),''),las=1)
+	text(cex=1.5, x=x.offset, y=c(1,2)-0.25, rev(names(indexVal)), xpd=TRUE, srt=45)
+	lines(range.rCnt,c(2,2),lwd=4) # Set by_ReadCount higher, at y=2
+	points(indexVal[1],2,pch=19,col='red',cex=2)
+	lines(range.sCnt,c(1,1),lwd=2) # Set by_SiteCount lower, at y=1
+	points(indexVal[2],1,pch=4,col='blue',cex=2,lwd=4)
+}
+
+# plot_sym7(): Given 2-by-7 indices of symmetry, plot seven horizontal bars to signify symmetry situation.
+plot_sym7 <- function(sym7,sample='') {
+	par(mar=c(6,8,4,10),cex.axis=1.5,cex.main=1.5) #mar=c(6,8,4,10),
+	sym7.normed <- t(t(sym7)/colSums(sym7))
+	barplot(sym7.normed[,ncol(sym7.normed):1],horiz=T,las=1,main=paste(sample,'Symmetry'),legend.text=T,
+		args.legend=list(x='right',pt.cex=2,cex=1.5,bty='n',inset=c(-0.8,0)))
+	abline(v=0.5,lty='dashed',col='red',lwd=2)
+}
+
+# plot_rcDistrib(): Take the bed data frame as primary input, plot a groupped barplot for three levels of readCounts.
+# INPUT bed0: secondary output of symmetry().
+# INPUT pts: default to c(0,5,10) points where frequency of higher readCounts is visualized. 
+# INPUT sample: sample name, to be prefixed to title (main) of figure.
+# OUTPUT Freq: Five-by-three count frequncy table. Top four rows for TT, TC, CC, and CT, bottom row for All. 
+######## 5 Rows: TT, TC, CC, CT, and All
+######## 3 Columns: >0, >5, >10
+plot_rcDistrib <- function(bed0,sample='',pts=c(0,5,10)) {
+	rc0 <- bed0[,5]
+  DINUC4=c('TT','TC','CC','CT')
+	bed <- bed0[bed0[,4]%in%DINUC4,]
+  dinucs <- bed[,4]
+  rc <- bed[,5]
+  RC4 <- split(rc,factor(dinucs))[DINUC4]
+	#Freq <- matrix(nr=length(DINUC4)+1,nc=length(pts),dimnames=list(c(DINUC4,'All'),paste('Reads',pts,sep='>')))
+	Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
+	Freq.all <- exceedingCnt(rc0,pts)	
+	colnames(Freq) <- paste('Reads',pts,sep='>')
+	par(mar=c(6,8,6,2),cex.main=1.5,cex.axis=1.5) #mar=c(6,8,6,2),
+	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nRead Count Frequency'),legend.text=T,
+		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
+	mtext(side=2,line=5,text='Frequency',cex=2)
+  #tiff(paste0('rcDistrib_truncate',truncate,'.tif'),width=2048,height=1600)
+  #dev.off()
+  rbind(Freq,All=Freq.all) 
+}
+
+# exceedingCnt(): How many values of rc exceed (>) the specified value of pt? 
+# UPDATE 5/15/20: Allow pt to be flexible, scalar or vector
+exceedingCnt <- function(rc,pt) {
+	freq <- sapply(pt, function(x)  sum(rc>x,na.rm=T))
+	freq
+}
 
 
