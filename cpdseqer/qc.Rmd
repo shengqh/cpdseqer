@@ -66,6 +66,7 @@ __Efficiency&Contrast__
 __Read Count Distribution__
 
 __Forward/Reverse Strand Symmetry__
+
 </font>
 ```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 #layout(matrix(1:3,nr=1))
