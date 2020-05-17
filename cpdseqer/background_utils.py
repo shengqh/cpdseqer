@@ -10,6 +10,81 @@ from Bio import SeqIO
 import argparse
 from argparse import RawTextHelpFormatter
 import numpy as np
+import os
+
+from .common_utils import MUT_LEVELS
+
+def read_background(fileName):
+    result = {}
+    with open(fileName, "rt") as fin:
+        fin.readline()
+        for line in fin:
+            parts = line.rstrip().split('\t')
+            result[parts[0]] = int(parts[1])
+    return(result)
+
+def write_background(fileName, dinuMap, allNames):
+    result = {}
+    with open(fileName, "wt") as fout:
+        fout.write("Pair\tTotal\n")
+        for dinuName in allNames:
+            fout.write("%s\t%d\n" % (dinuName, dinuMap[dinuName]))
+
+def calc_genome_region_background(logger, targetFolder, fastaFile, coordinateFile):
+    level_mut = set(MUT_LEVELS)
+    other_name = "Other"
+    all_names = MUT_LEVELS + [other_name]
+
+    background_file = os.path.join(targetFolder, fastaFile + ".background.count")
+    if os.path.isfile(background_file):
+        dinuMap = read_background(background_file)
+    else:
+        dinuMap = {lm:0 for lm in all_names}
+
+        with open(fastaFile, "rt") as fin:  
+            for record in SeqIO.parse(fin,'fasta'):
+                id = record.id
+                logger.info("Parsing chromosome " + id + " ...")
+
+                ref_seq = str(record.seq)   
+                for idx in range((len(ref_seq)-1)):
+                    dinu = ref_seq[idx:(idx+2)].upper()
+                    if dinu in level_mut:
+                        dinuMap[dinu] += 1
+                    else:
+                        dinuMap[other_name] += 1
+        write_background(background_file, dinuMap, all_names)
+    
+    result = [str(dinuMap[lm]) for lm in all_names]
+    return(result)
+
+def calc_genome_background(logger, targetFolder, fastaFile):
+    level_mut = set(MUT_LEVELS)
+    other_name = "Other"
+    all_names = MUT_LEVELS + [other_name]
+
+    background_file = os.path.join(targetFolder, fastaFile + ".background.count")
+    if os.path.isfile(background_file):
+        dinuMap = read_background(background_file)
+    else:
+        dinuMap = {lm:0 for lm in all_names}
+
+        with open(fastaFile, "rt") as fin:  
+            for record in SeqIO.parse(fin,'fasta'):
+                id = record.id
+                logger.info("Parsing chromosome " + id + " ...")
+
+                ref_seq = str(record.seq)   
+                for idx in range((len(ref_seq)-1)):
+                    dinu = ref_seq[idx:(idx+2)].upper()
+                    if dinu in level_mut:
+                        dinuMap[dinu] += 1
+                    else:
+                        dinuMap[other_name] += 1
+        write_background(background_file, dinuMap, all_names)
+    
+    result = [str(dinuMap[lm]) for lm in all_names]
+    return(result)
 
 def background(fasta_file, bed_file, output_file):
     #fasta_file = "seq_unique.fasta"

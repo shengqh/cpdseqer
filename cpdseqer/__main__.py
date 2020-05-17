@@ -104,7 +104,7 @@ def main():
 
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=NOT_DEBUG)
+  parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=False)
   parser_u.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input reference genome version, hg38/hg19/saccer3 (default hg38)')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
@@ -150,7 +150,7 @@ def main():
     fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)
   elif args.command == "uv_comp_genome":
     logger = initialize_logger(args.output + ".log", args)
-    uv_comp_genome(logger, args.input, args.output, args.db, args.count_type)
+    uv_comp_genome(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file)
   elif args.command == "qc":
     logger = initialize_logger(args.output + ".log", args)
     qc(logger, args.input, args.name, args.output, args.count_type)

@@ -6,7 +6,7 @@ import sys
 import shutil
 
 from .CategoryItem import CategoryItem
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
+from .common_utils import MUT_LEVELS, check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
 from .__version__ import __version__
 
 class ConfigItem:
@@ -64,7 +64,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
 
   level_chr = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
   #level_mut = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
-  level_mut = set(['CC', 'CT', 'TC', 'TT'])
+  level_mut = set(MUT_LEVELS)
 
   logger.info("Reading chromosome length from: %s ..." % chromInfo_file)
   catItems = []# List<CategoryItem>

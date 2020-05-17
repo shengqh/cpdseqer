@@ -4,6 +4,8 @@ import logging
 import errno
 import shutil
 
+MUT_LEVELS=['TT','TC','CC','CT']
+
 def check_file_exists(file):
   if not os.path.exists(file):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
