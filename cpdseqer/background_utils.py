@@ -153,7 +153,7 @@ def background(fasta_file, bed_file, output_file):
                     if len(aa) > 0:            
                         seq = seqs[int(aa[0])]
                         for jj in range(len(sub_sub_start_pos)):
-                            ref_seq = seq.seq[(sub_sub_start_pos[jj]-1):(sub_sub_end_pos[jj])]        
+                            ref_seq = str(seq.seq[(sub_sub_start_pos[jj]-1):(sub_sub_end_pos[jj])]).upper()       
                             for idx in range((len(ref_seq)-1)):
                                 if ref_seq[idx:(idx+2)] in result_all:
                                 #if result_all.has_key(ref_seq[idx:(idx+2)]):
@@ -188,7 +188,7 @@ def background(fasta_file, bed_file, output_file):
                 if len(aa) > 0:            
                     seq = seqs[int(aa[0])]
                     for jj in range(len(sub_start_pos)):
-                        ref_seq = seq.seq[(sub_start_pos[jj]-1):(sub_end_pos[jj])]        
+                        ref_seq = str(seq.seq[(sub_start_pos[jj]-1):(sub_end_pos[jj])]).upper()       
                         for idx in range((len(ref_seq)-1)):
                             if ref_seq[idx:(idx+2)] in result_all:
                                 result_all[ref_seq[idx:(idx+2)]] = result_all[ref_seq[idx:(idx+2)]]+1 
@@ -203,7 +203,7 @@ def background(fasta_file, bed_file, output_file):
         result_all["Pair"] = "Total"
         for ii in range(len(seqs)):
             seq = seqs[ii]        
-            ref_seq = str(seq.seq)   
+            ref_seq = str(seq.seq).upper()   
             for idx in range((len(ref_seq)-1)):
                 if ref_seq[idx:(idx+2)] in result_all:
                     result_all[ref_seq[idx:(idx+2)]] = result_all[ref_seq[idx:(idx+2)]]+1
