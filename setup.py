@@ -39,7 +39,7 @@ setuptools.setup(
     },
     packages=setuptools.find_packages(exclude=["tests", "tests.*", "scripts", "debug.py", ".project", ".pydevproject"]),
     package_data={'': ['cpdseqer/*.r', 'cpdseqer/*.rmd', 'cpdseqer/data/*.bed', 'cpdseqer/data/*.txt', 'cpdseqer/data/*.count', 'cpdseqer/data/*.zip']},
-    install_requires=['argparse', 'pathlib', 'pysam', 'pytabix', 'biopython', 'pandas' ],
+    install_requires=['argparse', 'pathlib', 'pysam', 'pytabix', 'biopython' ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
