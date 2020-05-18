@@ -137,7 +137,14 @@ def fig_position(logger, dinucleotideFileList, outputFile, coordinateFile, backg
           else:
             fout.write("%s\t%s\t%s\t%d\t%d\n" % (dinuName, index, k, count[0], count[1]))       
 
-  cmd = "R --vanilla -f " + rScript + " --args " + os.path.abspath(outputFile) + " " + os.path.abspath(outputFile)
+  options = {
+    'inputFile':os.path.abspath(outputFile),
+    'outfilePrefix':os.path.abspath(outputFile),
+  }
+
+  targetScript = write_r_script(outputFilePrefix, rScript, options)
+
+  cmd = "R --vanilla -f " + targetScript
   runCmd(cmd, logger)
 
   logger.info("done.")

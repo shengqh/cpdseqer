@@ -1,5 +1,3 @@
-rm(list=ls()) 
-
 args = commandArgs(trailingOnly=TRUE)
 
 inputFile=args[1]
@@ -16,6 +14,9 @@ library(RColorBrewer)
 
 posmelt<-read.delim(inputFile, header=T,as.is=T, stringsAsFactor=F)
 
+DINU4 = c("TT", "TC", "CT", "CC")
+posmelt<-posmelt[posmelt$Dinucleotide %in% DINU4,]
+
 dinus<-unique(posmelt$Dinucleotide)
 dinus<-dinus[order(dinus)]
 
@@ -30,6 +31,9 @@ stripTextSize=12
 ncols<-ifelse(featureNumber>=5, 2, 1)
 maxPos<-max(posmelt$Position)
 
+colors<-c("red", "blue", "yellow", "brown")
+names(colors)<-dinus
+
 for (ctype in c("Site", "Read")){
   for (y in c("Count", "NormalizedCount")){
     columnName=paste0(ctype, y)
@@ -43,7 +47,7 @@ for (ctype in c("Site", "Read")){
         geom_bar(stat="identity") +
         theme_bw()+
         theme(text = element_text(size=20))+theme(legend.text = element_text(size=16))+
-        scale_fill_manual(values=colorRampPalette(brewer.pal(9, "Set1"))(featureNumber)) + 
+        scale_fill_manual(values=colors) + 
         xlim(-5, maxPos+5) +
         theme(legend.key.size = unit(0.4, "cm"), legend.position="right") +
         guides(fill= guide_legend(ncol=ncols,keywidth=1, keyheight=1.5))
@@ -56,7 +60,7 @@ for (ctype in c("Site", "Read")){
     for (dinu in dinus) {
       dinuposmelt<-posmelt[posmelt$Dinucleotide == dinu,]
       m <- ggplot(dinuposmelt, aes_string(x="Position",y=columnName)) +
-          geom_bar(stat="identity") +
+          geom_bar(stat="identity", color=colors[dinu]) +
           theme_bw()+
           theme(text = element_text(size=20))+theme(legend.text = element_text(size=16))+
           xlim(-5, maxPos+5) +
