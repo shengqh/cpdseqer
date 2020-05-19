@@ -4,8 +4,9 @@ import errno
 import tabix
 import sys
 
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_rmd_script
-from .background_utils import calc_genome_background
+from .common_utils import check_file_exists, check_data_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_rmd_script, md5sum
+from .background_utils import genome_background, genome_background_region, calc_dinucleotide_distribution
+from .count_utils import count
 from .__version__ import __version__
 
 def read_config_file(config_file):
@@ -27,7 +28,7 @@ def calc_reg(logger, fasta_file):
 
   return []
 
-def uv_comp_genome(logger, count_list_file, output_file_prefix, db, count_type, coordinate_file):
+def uv_comp_genome(logger, count_list_file, output_file_prefix, db, count_type):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   countFileMap = readFileMap(count_list_file)
@@ -36,14 +37,17 @@ def uv_comp_genome(logger, count_list_file, output_file_prefix, db, count_type, 
   options = {
     "scenario": "sce1",
     "smp": countFiles,
-    "count_list_file": count_list_file,
     "cntType": count_type 
   }
 
   targetFolder = os.path.dirname(os.path.abspath(output_file_prefix))
 
   if os.path.isfile(db):
-    reg = calc_genome_background(logger, targetFolder, db)
+    db_count_file = os.path.join(os.path.dirname(os.path.abspath(output_file_prefix)), os.path.basename(db) + ".count")
+    if not os.path.isfile(db_count_file):
+      logger.info(f"Build background table for {db}")
+      genome_background(logger, db, db_count_file)
+    reg = calc_dinucleotide_distribution(db_count_file)
     logger.info("background" + str(reg))
     options["reg"] = ",".join(reg)
   else:
@@ -54,24 +58,32 @@ def uv_comp_genome(logger, count_list_file, output_file_prefix, db, count_type, 
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (targetFolder, os.path.basename(targetScript))
   runCmd(cmd, logger)
 
+def uv_comp_genome_region(logger, dinu_list_file, output_file_prefix, db, count_type, coordinate_file, useSpace=False, addChr=False):
 
-def uv_comp_genome_region(logger, count_list_file, output_file_prefix, db, count_type, coordinate_file):
+  #print(f"useSpace={useSpace}")
+
   check_file_exists(db)
-  reg = background_genome(logger, db)
-  logger.info("background" + str(reg))
-
-  rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
-
-  countFileMap = readFileMap(count_list_file)
-  countFiles = ",".join([countFileMap[name] for name in sorted(countFileMap.keys())])
+  check_data_file_exists(coordinate_file)
 
   options = {
     "scenario": "sce1",
-    "smp": countFiles,
-    "count_list_file": count_list_file,
-    "gn": db,
     "cntType": count_type 
   }
+
+  coordinate_md5 = md5sum(coordinate_file)
+  db_coord_count_file = os.path.join(os.path.dirname(os.path.abspath(output_file_prefix)), os.path.basename(db) + "." + coordinate_md5 + ".count")
+  if not os.path.isfile(db_coord_count_file):
+    logger.info(f"Build background table for {db}")
+    genome_background_region(logger, db, db_coord_count_file, coordinate_file, useSpace, addChr)
+  reg = calc_dinucleotide_distribution(db_coord_count_file)
+  logger.info("background=" + str(reg))
+  options["reg"] = ",".join(reg)
+
+  sample_count_file = output_file_prefix + ".sample.count"
+  count(logger, dinu_list_file, sample_count_file, coordinate_file, useSpace, addChr)
+  options["smp"] = sample_count_file
+
+  rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   targetScript = write_rmd_script(output_file_prefix, rScript, options)
 
