@@ -17,7 +17,7 @@ singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.ts
 		p4gn <- switch(gn,
 			hg38=c(0.0986,0.0595,0.0515,0.0700), #0.7204
 			hg19=c(0.0980,0.0594,0.0521,0.0700), #0.7206
-			saccer3=rep(1/16,4) # place-holder p vector
+			saccer3=c(0.108,0.062,0.039,0.058), #0.733
 		) # Limited to considered few refGenomes.
 	} else { # parse out p4 vector when reg is supplied.
 		p4gn <- parseReg(reg,gn,cnt5file=cnt5file)[1:4]
