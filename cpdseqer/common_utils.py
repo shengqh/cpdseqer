@@ -3,12 +3,26 @@ import os.path
 import logging
 import errno
 import shutil
+import hashlib
 
 MUT_LEVELS=['TT','TC','CC','CT']
+DINU_LEVELS=['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT','TT', 'TA', 'TC', 'TG']
+
+from .CategoryItem import CategoryItem
 
 def check_file_exists(file):
   if not os.path.exists(file):
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
+
+def check_data_file_exists(file):
+  if os.path.exists(file):
+    return(file)
+  
+  possibleFile = os.path.join(os.path.dirname(__file__), "data", file)
+  if os.path.exists(possibleFile):
+    return possibleFile
+  
+  raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
 
 def get_reference_start(elem):
     return elem.reference_start
@@ -60,16 +74,17 @@ def initialize_logger(logfile, args):
  
   return(logger)
 
-def read_coordinate_file(fileName, defCatName, delimit='\t', add_chr=False):
+def read_coordinate_file(fileName, defCatName, delimit='\t', addChr=False, categoryIndex=-1):
+  #print("delimit=tab" if delimit=='\t' else "delimit=space")
   result = []
   with open(fileName, "rt") as fin:
     for line in fin:
       parts = line.rstrip().split(delimit)
       #print(parts)
       chrom = "chr" + parts[0] if addChr else parts[0] 
-      catName = parts[category_index] if (category_index != -1 and category_index < len(parts)) else defCatName
+      catName = parts[categoryIndex] if (categoryIndex != -1 and categoryIndex < len(parts)) else defCatName
       #print(catName)
-      result.append(CategoryItem(chrom, int(parts[1]), int(parts[2]), catName))
+      result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), catName))
       
   return(result)
 
@@ -146,3 +161,19 @@ def write_rmd_script(outfilePrefix, rmdScript, optionMap={}, copyRFunction=True,
           fout.write(line)
 
   return(targetScript)
+
+def md5sum(filename, blocksize=65536):
+    hash = hashlib.md5()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(blocksize), b""):
+            hash.update(block)
+    return hash.hexdigest()
+
+def read_chromosomes(countFile):
+    chromMap = {}
+    with open(countFile, "rt") as fin:
+      fin.readline()
+      for line in fin:
+        parts = line.split('\t')
+        chromMap[parts[0]] = 1
+    return (sorted(list(chromMap.keys())))
