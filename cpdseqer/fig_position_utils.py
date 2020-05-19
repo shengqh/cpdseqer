@@ -142,7 +142,7 @@ def fig_position(logger, dinucleotideFileList, outputFile, coordinateFile, backg
     'outfilePrefix':os.path.abspath(outputFile),
   }
 
-  targetScript = write_r_script(outputFilePrefix, rScript, options)
+  targetScript = write_r_script(outputFile, rScript, options)
 
   cmd = "R --vanilla -f " + targetScript
   runCmd(cmd, logger)
