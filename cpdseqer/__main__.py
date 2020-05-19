@@ -13,7 +13,7 @@ from .statistic_utils import statistic
 from .report_utils import report
 from .fig_genome_utils import fig_genome
 from .fig_position_utils import fig_position
-from .uv_comp_utils import uv_comp_genome
+from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region
 from .qc_utils import qc
 
 # CPD-seq data analysis
@@ -68,14 +68,20 @@ def main():
   parser_p.add_argument('-t', '--test', action='store_true', help='Test the first 1000000 reads only')
   parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
+  parser_q = subparsers.add_parser('qc', help='Quality control based on dinucleotide count result')
+  parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide prefix', required=NOT_DEBUG)
+  parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input sample name')
+  parser_q.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_q.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
   # create the parser for the "statistic" command
-  parser_s = subparsers.add_parser('statistic')
-  parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_s.add_argument('-c', '--coordinate_list_file', action='store', nargs='?', help='Input coordinate list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
-  parser_s.add_argument('--category_index', type=int, default=-1, nargs='?', help='Zero-based category column index in coordinate file')
-  parser_s.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
-  parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+  # parser_s = subparsers.add_parser('statistic')
+  # parser_s.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  # parser_s.add_argument('-c', '--coordinate_list_file', action='store', nargs='?', help='Input coordinate list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  # parser_s.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
+  # parser_s.add_argument('--category_index', type=int, default=-1, nargs='?', help='Zero-based category column index in coordinate file')
+  # parser_s.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
+  # parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "report" command
   parser_r = subparsers.add_parser('report')
@@ -104,16 +110,18 @@ def main():
 
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=False)
   parser_u.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input reference genome version, hg38/hg19/saccer3 (default hg38)')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
-  parser_q = subparsers.add_parser('qc', help='Quality control based on dinucleotide count result')
-  parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide prefix', required=NOT_DEBUG)
-  parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input sample name')
-  parser_q.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
-  parser_q.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+  parser_u = subparsers.add_parser('uv_comp_genome_region', help='Compare UV radiation damage between sample(s) and reference genome background in specific region')
+  parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=False)
+  parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
+  parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
+  parser_u.add_argument('-d', '--db', action='store', nargs='?', help='Input reference genome fasta file')
+  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv) == 1:
     parser.print_help()
@@ -136,9 +144,12 @@ def main():
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
     bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file, args.mapping_quality, args.unique_only, args.min_coverage, args.test)
-  elif args.command == "statistic":
+  elif args.command == "qc":
     logger = initialize_logger(args.output + ".log", args)
-    statistic(logger, args.input, args.output, args.coordinate_list_file, args.category_index, args.space, args.add_chr)
+    qc(logger, args.input, args.name, args.output, args.count_type)
+  # elif args.command == "statistic":
+  #   logger = initialize_logger(args.output + ".log", args)
+  #   statistic(logger, args.input, args.output, args.coordinate_list_file, args.space, args.add_chr, args.category_index)
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
     report(logger, args.input, args.group, args.output, args.block, args.db)
@@ -150,10 +161,10 @@ def main():
     fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)
   elif args.command == "uv_comp_genome":
     logger = initialize_logger(args.output + ".log", args)
-    uv_comp_genome(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file)
-  elif args.command == "qc":
+    uv_comp_genome(logger, args.input, args.output, args.db, args.count_type)
+  elif args.command == "uv_comp_genome_region":
     logger = initialize_logger(args.output + ".log", args)
-    qc(logger, args.input, args.name, args.output, args.count_type)
+    uv_comp_genome_region(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file, args.space, args.add_chr)
   
 if __name__ == "__main__":
     main()
