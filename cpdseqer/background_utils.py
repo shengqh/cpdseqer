@@ -37,7 +37,7 @@ def genome_background_region(logger, fastaFile, outputFile, coordinateFile, useS
 
     coordinateFile = check_data_file_exists(coordinateFile)
 
-    logger.info("Reading category file " + coordinateFile + " ...")
+    logger.info("Reading coordinate file " + coordinateFile + " ...")
     delimit = ' ' if useSpace else '\t'
     coordinates = read_coordinate_file(coordinateFile, os.path.basename(coordinateFile), delimit, addChr)
 
