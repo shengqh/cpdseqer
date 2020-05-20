@@ -154,6 +154,8 @@ def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, co
 
 
 def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefix, count_type, coordinate_file, useSpace=False, addChr=False):
+  rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
+
   coordinate_file = check_data_file_exists(coordinate_file)
 
   sample_count_file1 = output_prefix + ".sample1.count"
