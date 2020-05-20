@@ -290,3 +290,17 @@ singularity build cpdseqer.simg docker://shengqh/cpdseqer
 singularity exec -e cpdseqer.simg bowtie2 -h
 singularity exec -e cpdseqer.simg cpdseqer -h
 ```
+
+# Running step by step
+
+We provide example data and code for public download
+
+```
+wget -r --no-parent --reject "index.html*" https://cqsweb.app.vumc.org/download1/cpdseqer/
+cd cqsweb.app.vumc.org/download1/cpdseqer/data
+tar -xzvf GRCh38.p13.bowtie2.tar.gz
+rm GRCh38.p13.bowtie2.tar.gz
+cd ..
+unzip test.zip
+rm test.zip
+```
