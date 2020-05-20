@@ -177,3 +177,6 @@ def read_chromosomes(countFile):
         parts = line.split('\t')
         chromMap[parts[0]] = 1
     return (sorted(list(chromMap.keys())))
+    
+def get_count_file(dinucleotide_file):
+  return(dinucleotide_file.replace(".bed.gz", ".count"))
