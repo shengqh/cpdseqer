@@ -22,24 +22,27 @@ def read_config_file(config_file):
       result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index]))
   return(result)
 
-def qc(logger, sample_file_prefix, sample_name, output_file_prefix, count_type):
-  targetFolder = os.path.dirname(output_file_prefix)
+def qc(logger, dinucleotide_prefix, sample_name, output_prefix, count_type):
+  targetFolder = os.path.dirname(output_prefix)
 
-  dinuclotide_file = sample_file_prefix + ".bed.bgz"
-  count_file = sample_file_prefix + ".count"
-  check_file_exists(dinuclotide_file)
+  dinucleotide_file = dinucleotide_prefix + ".bed.bgz"
+  index_file = dinucleotide_file + ".tbi"
+  count_file = dinucleotide_file + ".count"
+
+  check_file_exists(dinucleotide_file)
+  check_file_exists(index_file)
   check_file_exists(count_file)
 
   rScript = os.path.join( os.path.dirname(__file__), "qc.Rmd")
   
   options = {
     "sample": sample_name,
-    "bgz": dinuclotide_file,
+    "bgz": dinucleotide_file,
     "cnt": count_file,
     "count_type": count_type 
   }
 
-  targetScript = write_rmd_script(output_file_prefix, rScript, options)
+  targetScript = write_rmd_script(output_prefix, rScript, options)
 
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (os.path.dirname(os.path.abspath(targetScript)), os.path.basename(targetScript))
   runCmd(cmd, logger)
