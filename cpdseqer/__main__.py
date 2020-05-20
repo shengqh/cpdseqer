@@ -189,7 +189,7 @@ def main():
     uv_comp_genome(logger, args.input, args.output, args.db, args.count_type)
   elif args.command == "uv_comp_genome_region":
     logger = initialize_logger(args.output + ".log", args)
-    uv_comp_genome_region(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file, args.space, args.add_chr)
+    uv_comp_genome_region(logger, args.input, args.output, args.fasta, args.count_type, args.coordinate_file, args.space, args.add_chr)
   elif args.command == "uv_comp_regions":
     logger = initialize_logger(args.output + ".log", args)
     uv_comp_regions(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file1, args.coordinate_file2, args.space, args.add_chr)
