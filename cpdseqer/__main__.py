@@ -119,7 +119,7 @@ def main():
   parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=False)
   parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
   parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
-  parser_u.add_argument('-d', '--db', action='store', nargs='?', help='Input reference genome fasta file')
+  parser_u.add_argument('-f', '--fasta', action='store', nargs='?', help='Input reference genome fasta file')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
