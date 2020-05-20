@@ -6,7 +6,7 @@ import sys
 
 from .DinucleotideItem import DinucleotideItem
 from .CategoryItem import CategoryItem
-from .common_utils import check_file_exists, check_data_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, read_coordinate_file, read_chromosomes
+from .common_utils import check_file_exists, check_data_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, read_coordinate_file, read_chromosomes, get_count_file
 
 def write_count_file(outputFile, finalMap):
   with open(outputFile, "wt") as fout:
@@ -27,7 +27,7 @@ def count(logger, dinucleotideFileList, outputFile, coordinateFile, useSpace=Fal
   coordinates = []
   delimit = ' ' if useSpace else '\t'
 
-  logger.info("Reading category file " + coordinateFile + " ...")
+  logger.info("Reading coordinate file " + coordinateFile + " ...")
   coordinates = read_coordinate_file(coordinateFile, os.path.basename(coordinateFile), delimit, addChr)
 
   for coord in coordinates:
