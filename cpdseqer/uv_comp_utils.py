@@ -45,7 +45,7 @@ def uv_comp_genome(logger, count_list_file, output_prefix, db, count_type):
   if os.path.isfile(db):
     db_count_file = os.path.join(os.path.dirname(os.path.abspath(output_prefix)), os.path.basename(db) + ".count")
     if not os.path.isfile(db_count_file):
-      logger.info(f"Build background table for {db}")
+      logger.info("Build background table for %s" % db)
       genome_background(logger, db, db_count_file)
     reg = calc_dinucleotide_distribution(db_count_file)
     logger.info("background" + str(reg))
@@ -62,7 +62,7 @@ def calc_reg(logger, output_prefix, coordinate_file, db, useSpace, addChr):
   coordinate_md5 = md5sum(coordinate_file)
   db_coord_count_file = os.path.join(os.path.dirname(os.path.abspath(output_prefix)), os.path.basename(db) + "." + coordinate_md5 + ".count")
   if not os.path.isfile(db_coord_count_file):
-    logger.info(f"Build background table for {db}")
+    logger.info("Build background table for %s" % db)
     genome_background_region(logger, db, db_coord_count_file, coordinate_file, useSpace, addChr)
   reg = calc_dinucleotide_distribution(db_coord_count_file)
   return(reg)
@@ -102,10 +102,10 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
   }
 
   reg1 = calc_reg(logger, output_prefix, coordinate_file1, db, useSpace, addChr)
-  logger.info(f"reg1={reg1}")
+  logger.info("reg1=" + reg1)
 
   reg2 = calc_reg(logger, output_prefix, coordinate_file2, db, useSpace, addChr)
-  logger.info(f"reg2={reg2}")
+  logger.info("reg2=" + reg2)
 
   reg_count_file1 = output_prefix + ".reg1.count"
   count(logger, dinu_list_file, reg_count_file1, coordinate_file1, useSpace, addChr)

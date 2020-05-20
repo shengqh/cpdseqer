@@ -51,7 +51,7 @@ def genome_background_region(logger, fastaFile, outputFile, coordinateFile, useS
         for record in SeqIO.parse(fin,'fasta'):
             id = record.id
             if id not in coordMap.keys():
-                logger.info(f"Chromosome {id} not in coordinates, ignored ...")
+                logger.info("Chromosome %s not in coordinates, ignored ..." % id)
                 continue
 
             logger.info("Parsing chromosome " + id + " ...")
