@@ -13,7 +13,7 @@ from .statistic_utils import statistic
 from .report_utils import report
 from .fig_genome_utils import fig_genome
 from .fig_position_utils import fig_position
-from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region
+from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region, uv_comp_regions, uv_comp_groups, uv_comp_groups_region
 from .qc_utils import qc
 
 # CPD-seq data analysis
@@ -84,12 +84,12 @@ def main():
   # parser_s.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "report" command
-  parser_r = subparsers.add_parser('report')
-  parser_r.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_r.add_argument('-g', '--group', action='store', nargs='?', help='Input group list file, first column is group (0 for control and 1 for case), second column is file name', required=NOT_DEBUG)
-  parser_r.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count')
-  parser_r.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19 (default hg38)')
-  parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+  # parser_r = subparsers.add_parser('report')
+  # parser_r.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  # parser_r.add_argument('-g', '--group', action='store', nargs='?', help='Input group list file, first column is group (0 for control and 1 for case), second column is file name', required=NOT_DEBUG)
+  # parser_r.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count')
+  # parser_r.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19 (default hg38)')
+  # parser_r.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "fig_genome" command
   parser_sg = subparsers.add_parser('fig_genome', help="Generate statistic figure on genome/chromosome level")
@@ -120,6 +120,31 @@ def main():
   parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
   parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
   parser_u.add_argument('-d', '--db', action='store', nargs='?', help='Input reference genome fasta file')
+  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
+  parser_u = subparsers.add_parser('uv_comp_regions', help='Compare UV radiation damage between different regions in genome')
+  parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-c1', '--coordinate_file1', action='store', nargs='?', help='Input coordinate bed file 1', required=False)
+  parser_u.add_argument('-c2', '--coordinate_file2', action='store', nargs='?', help='Input coordinate bed file 2', required=False)
+  parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
+  parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
+  parser_u.add_argument('-d', '--db', action='store', nargs='?', help='Input reference genome fasta file')
+  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
+  parser_u = subparsers.add_parser('uv_comp_groups', help='Compare UV radiation damage between different sample groups')
+  parser_u.add_argument('-i1', '--input1', action='store', nargs='?', help='Input dinucleotide list file 1, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-i2', '--input2', action='store', nargs='?', help='Input dinucleotide list file 2, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
+  parser_u = subparsers.add_parser('uv_comp_groups_region', help='Compare UV radiation damage between different sample groups in specific region')
+  parser_u.add_argument('-i1', '--input1', action='store', nargs='?', help='Input dinucleotide list file 1, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-i2', '--input2', action='store', nargs='?', help='Input dinucleotide list file 2, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=False)
+  parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
+  parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
   
@@ -165,6 +190,15 @@ def main():
   elif args.command == "uv_comp_genome_region":
     logger = initialize_logger(args.output + ".log", args)
     uv_comp_genome_region(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file, args.space, args.add_chr)
+  elif args.command == "uv_comp_regions":
+    logger = initialize_logger(args.output + ".log", args)
+    uv_comp_regions(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file1, args.coordinate_file2, args.space, args.add_chr)
+  elif args.command == "uv_comp_groups":
+    logger = initialize_logger(args.output + ".log", args)
+    uv_comp_groups(logger, args.input1, args.input2, args.output, args.count_type)
+  elif args.command == "uv_comp_groups_region":
+    logger = initialize_logger(args.output + ".log", args)
+    uv_comp_groups_region(logger, args.input1, args.input2, args.output, args.count_type, args.coordinate_file, args.space, args.add_chr)
   
 if __name__ == "__main__":
     main()
