@@ -4,13 +4,13 @@ This package is used to do CPD sequence data analysis.
 
 # Prerequisites
 
-Install tabix, samtools and bowtie2
+Install tabix, samtools and bowtie2 in Terminal
 
 ```
 sudo apt-get install -y tabix samtools bowtie2 pandoc
 ```
 
-Install R packages
+Install R packages in R
 
 ```
 install.packages(c("knitr","rmarkdown"))
