@@ -4,7 +4,7 @@ import errno
 import tabix
 import sys
 
-from .common_utils import check_file_exists, check_data_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_rmd_script, md5sum
+from .common_utils import MUT_LEVELS, check_file_exists, check_data_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_rmd_script, md5sum
 from .background_utils import genome_background, genome_background_region, calc_dinucleotide_distribution
 from .count_utils import count
 from .__version__ import __version__
@@ -22,11 +22,6 @@ def read_config_file(config_file):
         continue
       result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index]))
   return(result)
-
-def calc_reg(logger, fasta_file):
-  mut_levels = ['TT','TC','CC','CT']
-
-  return []
 
 def uv_comp_genome(logger, count_list_file, output_prefix, db, count_type):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
@@ -102,10 +97,10 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
   }
 
   reg1 = calc_reg(logger, output_prefix, coordinate_file1, db, useSpace, addChr)
-  logger.info("reg1=" + reg1)
+  logger.info("reg1=" + str(reg1))
 
   reg2 = calc_reg(logger, output_prefix, coordinate_file2, db, useSpace, addChr)
-  logger.info("reg2=" + reg2)
+  logger.info("reg2=" + str(reg2))
 
   reg_count_file1 = output_prefix + ".reg1.count"
   count(logger, dinu_list_file, reg_count_file1, coordinate_file1, useSpace, addChr)
