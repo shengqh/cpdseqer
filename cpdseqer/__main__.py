@@ -110,7 +110,7 @@ def main():
 
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_u.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input reference genome version, hg38/hg19/saccer3 (default hg38)')
+  parser_u.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome version, hg38/hg19/saccer3 (default hg38)')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
@@ -129,13 +129,13 @@ def main():
   parser_u.add_argument('-c2', '--coordinate_file2', action='store', nargs='?', help='Input coordinate bed file 2', required=False)
   parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
   parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
-  parser_u.add_argument('-d', '--db', action='store', nargs='?', help='Input reference genome fasta file')
+  parser_u.add_argument('-f', '--fasta', action='store', nargs='?', help='Input reference genome fasta file')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_groups', help='Compare UV radiation damage between different sample groups')
-  parser_u.add_argument('-i1', '--input1', action='store', nargs='?', help='Input dinucleotide list file 1, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_u.add_argument('-i2', '--input2', action='store', nargs='?', help='Input dinucleotide list file 2, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-i1', '--input1', action='store', nargs='?', help='Input CPD count list file 1, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_u.add_argument('-i2', '--input2', action='store', nargs='?', help='Input CPD count list file 2, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
@@ -186,13 +186,13 @@ def main():
     fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)
   elif args.command == "uv_comp_genome":
     logger = initialize_logger(args.output + ".log", args)
-    uv_comp_genome(logger, args.input, args.output, args.db, args.count_type)
+    uv_comp_genome(logger, args.input, args.output, args.genome, args.count_type)
   elif args.command == "uv_comp_genome_region":
     logger = initialize_logger(args.output + ".log", args)
     uv_comp_genome_region(logger, args.input, args.output, args.fasta, args.count_type, args.coordinate_file, args.space, args.add_chr)
   elif args.command == "uv_comp_regions":
     logger = initialize_logger(args.output + ".log", args)
-    uv_comp_regions(logger, args.input, args.output, args.db, args.count_type, args.coordinate_file1, args.coordinate_file2, args.space, args.add_chr)
+    uv_comp_regions(logger, args.input, args.output, args.fasta, args.count_type, args.coordinate_file1, args.coordinate_file2, args.space, args.add_chr)
   elif args.command == "uv_comp_groups":
     logger = initialize_logger(args.output + ".log", args)
     uv_comp_groups(logger, args.input1, args.input2, args.output, args.count_type)
