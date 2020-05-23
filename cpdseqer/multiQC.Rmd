@@ -54,7 +54,7 @@ if (!exists('smps')) {
 	counts <- meta[,2] # 2nd col has COUNT files
 	bgzs <- meta[,3] # 3rd col has BGZ files
 	names(effs) <- names(conts) <- names(syms) <- names(counts) <- names(bgzs) <- samples <- meta[,1]
-	bedS <- vector('list',10)
+	bedS <- vector('list',K)
 	names(bedS) <- samples
 	for (sample in samples) {
 		#cat(sample,'\n')

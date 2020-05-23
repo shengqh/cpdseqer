@@ -68,9 +68,15 @@ def main():
   parser_p.add_argument('-t', '--test', action='store_true', help='Test the first 1000000 reads only')
   parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
-  parser_q = subparsers.add_parser('qc', help='Quality control based on dinucleotide count result')
-  parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide prefix', required=NOT_DEBUG)
-  parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input sample name')
+  # parser_q = subparsers.add_parser('qc', help='Quality control based on dinucleotide count result')
+  # parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide prefix', required=NOT_DEBUG)
+  # parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input sample name')
+  # parser_q.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  # parser_q.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
+  parser_q = subparsers.add_parser('qc', help='Quality control based on multiple dinucleotide count results')
+  parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input list file, first column is file name, second column is count file path, third column is dinucleotide file path', required=NOT_DEBUG)
+  parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input project name')
   parser_q.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_q.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
@@ -106,7 +112,7 @@ def main():
   parser_f.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate files')
   parser_f.add_argument('--add_chr', action='store_true', help='Add chr in chromosome name in coordinate file')
   parser_f.add_argument('-t', '--test', action='store_true', help='Test the first 10000 coordinates only')
-  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
