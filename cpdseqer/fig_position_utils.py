@@ -20,7 +20,7 @@ def readCoordinate(fin, addChr, delimit):
     result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), None))
   return(result)
 
-def fig_position(logger, dinucleotideFileList, outputFile, coordinateFile, backgroundFile=None, useSpace=False, addChr=False, test=False):
+def fig_position(logger, dinucleotideFileList, outputPrefix, coordinateFile, backgroundFile=None, useSpace=False, addChr=False, test=False):
   background_name = "__BACKGROUND__"
 
   logger.info("Reading dinucleotide file list ...")
@@ -37,6 +37,7 @@ def fig_position(logger, dinucleotideFileList, outputFile, coordinateFile, backg
   if not os.path.exists(rScript):
     raise Exception("Cannot find rscript %s" % rScript)
   
+  outputFile = outputPrefix + ".txt"
   targetScript = write_r_script(outputFile, rScript, {'inputFile':outputFile})
 
   bNormalize = backgroundFile != None
@@ -139,7 +140,7 @@ def fig_position(logger, dinucleotideFileList, outputFile, coordinateFile, backg
 
   options = {
     'inputFile':os.path.abspath(outputFile),
-    'outfilePrefix':os.path.abspath(outputFile),
+    'outfilePrefix':os.path.join(os.path.abspath(outputFile), outputPrefix)
   }
 
   targetScript = write_r_script(outputFile, rScript, options)
