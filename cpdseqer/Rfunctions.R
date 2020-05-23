@@ -1,4 +1,4 @@
-# Combined from three Rscripts on 05/13/20: Rfunctions.R, QC.R, QC.plot.R.
+# Added with multiQC functions relative to GitHub version 05/20/20
 # singleSample(): When only one (group of) sample is specified, performs Chisq test for overall 5 categories and one-vs-other test for four DINUCs.
 
 # INPUT smp: either file name or read-in data.frame for single sample. (When reg is specified, smp must be preprocessed to contain counts for the corresponding region.)
@@ -451,7 +451,7 @@ plot_DotByStem <- function(indexVal,range.rCnt=c(0.576,0.813),range.sCnt=c(0.576
 
 # plot_sym7(): Given 2-by-7 indices of symmetry, plot seven horizontal bars to signify symmetry situation.
 plot_sym7 <- function(sym7,sample='') {
-	par(mar=c(6,8,4,10),cex.axis=1.5,cex.main=1.5) #mar=c(6,8,4,10),
+	par(mar=c(6,8,4,10),fin=c(12,6),cex.axis=1.5,cex.main=1.5) # UPDATE 05/21/20 fin
 	sym7.normed <- t(t(sym7)/colSums(sym7))
 	barplot(sym7.normed[,ncol(sym7.normed):1],horiz=T,las=1,main=paste(sample,'Symmetry'),legend.text=T,
 		args.legend=list(x='right',pt.cex=2,cex=1.5,bty='n',inset=c(-0.8,0)))
@@ -476,7 +476,7 @@ plot_rcDistrib <- function(bed0,sample='',pts=c(0,5,10)) {
 	Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
 	Freq.all <- exceedingCnt(rc0,pts)	
 	colnames(Freq) <- paste('Reads',pts,sep='>')
-	par(mar=c(6,8,6,2),cex.main=1.5,cex.axis=1.5) #mar=c(6,8,6,2),
+	par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5) # UPDATE 05/21/20 fin
 	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nRead Count Frequency'),legend.text=T,
 		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
 	mtext(side=2,line=5,text='Frequency',cex=2)
@@ -491,5 +491,55 @@ exceedingCnt <- function(rc,pt) {
 	freq <- sapply(pt, function(x)  sum(rc>x,na.rm=T))
 	freq
 }
+# plotM_rcDistrib(): Given a list of bgz bed data frames, plot barplots of readCounts for multiple samples, at given cut-off points.
+# INPUT bedS: a list of K components, corresponding to K samples in a batch.
+# dinuc takes value from {'TT','TC','CC','CT'} or any combination
+plotM_rcDistrib <- function(bedS,exp='Experiment',dinuc=c('TT','TC','CC','CT'),pts=c(0,5,10)) {
+	K <- length(bedS)
+	bedS <- lapply(bedS,function(x,scope) x[x[,4]%in%scope,],dinuc)
+	rcS <- lapply(bedS,function(x) x[,5])	
+	Freq <- sapply(rcS,exceedingCnt,pts) # count matrix: pts by sample
+	Freq <- t(Freq) # transpose to sample by pts
+	colnames(Freq) <- paste('Reads',pts,sep='>')
+	Freq <- Freq[order(-Freq[,1]),]
+  par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5) #mar=c(6,8,6,2),
+  barplot(Freq,beside=T,log='y',las=1,main=paste(exp,'\nRead Count Frequency'),legend.text=T,
+    args.legend=list(x='topright',bty='n',pt.cex=1.2))
+  mtext(side=2,line=5,text='Frequency',cex=2)
+	Freq
+}
+# plotM_EffCont(): Calculate Efficiency & Contrast for multiple samples and plotted them in left-and-right panels.
+# INPUT effs: Efficiency values for K samples.
+# INPUT conts: Contrast values for K samples.
+plotM_EffCont <- function(effs,conts,range.eff,range.cont,exp='Experiment') {
+	layout(matrix(1:2,nr=1))
+	plot_particles(effs,'Efficiency',range.eff,exp)
+	plot_particles(conts,'Contrast',range.cont,exp)	
+}
 
-
+# plot_particles(): Spread out K Eff/Cont values vertically as particles. Customized boxplot.
+# INPUT indexVal: K index values, must be named with sample names.
+plot_particles <- function(indexVal,index='Efficiency',indexRange=c(0.576,0.813),Experiment='') {
+	indexVal <- sort(indexVal[!is.na(indexVal)])
+	K <- length(indexVal)
+	par(mar=c(4,9,4,2),cex.main=1.5,cex.axis=1.2,cex.lab=1.5)
+	plot(range(indexVal),c(-0.5,K),type='n',axes=F,ylab='',xlab=index,main=Experiment)
+	num5 <- fivenum(indexVal)
+	q25 <- num5[2]
+	q75 <- num5[4]
+	iqrVal <- IQR(indexVal)
+	lb <- q25-1.5*iqrVal
+	ub <- q75+1.5*iqrVal
+	outliers <- indexVal<lb | indexVal>ub
+	for (i in 1:K) {
+		if (!outliers[i]) {
+			points(indexVal[i],i,pch=19,cex=1.5)
+		} else {
+			points(indexVal[i],i,pch='x',cex=2,col='red')
+		}
+	}	
+	lines(indexRange,c(0,0),col='gray',lwd=2)
+	text(median(indexVal),-0.4,'reference',cex=1.2,col='gray')
+	axis(side=1)#,at=seq(from=min(indexVal),to=max(indexVal),len=5))
+	axis(side=2,at=1:K,labels=names(indexVal),las=1)
+}

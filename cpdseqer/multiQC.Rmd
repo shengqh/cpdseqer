@@ -1,0 +1,122 @@
+---
+title: "CPDseqer Quality Control Report (multi-sample)"
+date: "`r format(Sys.time())`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+---
+<style type="text/css">
+.main-container {
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+---
+
+```{r setup, include=FALSE}
+option_file="multiQC.options.txt"
+knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
+library(knitr) # kable
+library(reshape2) # dcast
+source('Rfunctions.R')
+```
+```{r stat, echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+opts <- read.delim(option_file,head=F,as.is=T)
+optAssignments <- paste0(opts[,1],'=\'',opts[,2],'\'')
+exp <- 'Experiment' # or a study
+DINUC4 <- c('TT','TC','CC','CT')
+cntType <- 'rCnt'
+nDigit <- 3
+for (assignment in optAssignments) {
+  eval(parse(text=assignment))
+}
+if (dinuc=='DINUC4') dinuc=DINUC4
+if (!exists('smps')) {
+	stop('Multi-samples must be specified!')
+} else {
+	meta <- read.delim(smps,head=F,as.is=T)
+	K <- nrow(meta)
+	feedback=paste0('**Study**: *',exp,'*; *',K,'* *samples;* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
+	feedback <- gsub('rCnt','ReadCount',feedback)
+	feedback <- gsub('sCnt','SiteCount',feedback)
+	effRange <- switch(cntType,
+		rCnt=EffR.r,
+		sCnt=EffR.s
+	)
+  contRange <- switch(cntType,
+    rCnt=ContR.r,
+    sCnt=ContR.s
+  )
+	effs <- conts <- syms <- numeric(K) # cont for contrast, different from count (file)
+	counts <- meta[,2] # 2nd col has COUNT files
+	bgzs <- meta[,3] # 3rd col has BGZ files
+	names(effs) <- names(conts) <- names(syms) <- names(counts) <- names(bgzs) <- samples <- meta[,1]
+	bedS <- vector('list',10)
+	names(bedS) <- samples
+	for (sample in samples) {
+		#cat(sample,'\n')
+		effs[sample] <- efficiency(counts[sample],cntType)
+		conts[sample] <- contrast(counts[sample],cntType)
+		symRes <- symmetry(bgzs[sample],cntType)
+		bed <- symRes$bed
+		bedS[[sample]] <- bed[bed[,4]%in%dinuc,]
+		sym <- symRes$sym7[,dinuc]
+		syms[sample] <- signif(sym[1]/sym[2],nDigit)
+	}
+	tbl3indices <- cbind(Efficiency=signif(effs,nDigit),Contrast=signif(conts,nDigit),Symmetry=paste(syms,1,sep=':'))
+	colnames(tbl3indices)[3] <- 'Symmetry (Forward:Reverse)'
+	rownames(tbl3indices) <- samples
+	#plotM_rcDistrib(bedS)
+}
+
+
+if (FALSE) {"
+  bgz <- paste0('/home/installer/CPD/GSE103487_human_single/result/',mao2018,'.fastq.dinucleotide.bed.bgz.bed.bgz')
+  K <- length(bgz) # nSamples
+  bedS <- vector('list',10)
+  names(bedS) <- mao2018
+  for (i in 1:K) {
+    cat(mao2018[i],'\n')
+    symRes <- symmetry(bgz[i],'rCnt')
+    bed <- symRes$bed
+    bedS[[i]] <- bed[bed[,4]%in%c('TT','TC','CC','CT'),]
+    #sym <- symRes$sym7[,'DINUC4'] # Symmetry only considers DINUC4
+    #sym <- signif(sym[1]/sym[2],nDigit)
+  }
+  plotM_rcDistrib(bedS)
+"}
+```
+
+# Parameters for `r exp`
+
+<font size="3"> `r feedback`</font>
+
+# QC figures
+<font size="4">
+__Efficiency&Contrast__
+
+__Read Count Distribution__
+
+</font>
+```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+plotM_EffCont(effs,conts,effRange,contRange,exp)
+knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
+Freq <- plotM_rcDistrib(bedS,exp,dinuc,pts=c(0,5,10))
+```
+
+# QC tables
+
+## Efficiency&Contrast
+
+```{r tableEffCont,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+kable(tbl3indices)
+```
+
+## Read Count Distribution
+
+```{r tableRcDistrib,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+kable(Freq)
+```
