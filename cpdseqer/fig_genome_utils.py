@@ -36,7 +36,7 @@ def read_config_file(config_file):
       result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index]))
   return(result)
 
-def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
+def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count):
   check_file_exists(configFile)
 
   items = read_config_file(configFile)
@@ -91,17 +91,18 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
   logger.info("Processing dinucleotide files ...")
   targetConfigFile = outputFilePrefix + ".config.txt"
   with open(targetConfigFile, "wt") as fout:
-    fout.write("Group\tSample\tDinuFile\tCountFile\n")
+    fout.write("Group\tSample\tDinuFile\tCountFile\tTotalRead\tTotalSite\n")
     for item in items:
       dinuName = item.name
       dinuGroup = item.is_case
       dinuFile = item.dinucleotide_file
       targetDinuFile = os.path.join(targetFolder, "%s_block%d.txt" % (os.path.basename(dinuFile), block))
-      fout.write("%s\t%s\t%s\t%s\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file)))
 
       #if os.path.isfile(targetDinuFile):
       #  continue
 
+      totalFileReadCount = 0
+      totalFileSiteCount = 0
       dinuMap = {}
       logger.info("Processing %s ..." % dinuFile)
       with open(targetDinuFile, "wt") as fdinu:
@@ -121,17 +122,24 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
           totalSiteCount = 0
           for record in records:
             dinucleotide = record[3]
-            if dinucleotide not in level_mut:
-              continue
 
             diCount = int(record[4])
             if diCount == 0:
               diCount = 1
+
+            totalFileReadCount += diCount
+            totalFileSiteCount += 1
+
+            if dinucleotide not in level_mut:
+              continue
+
             totalReadCount += diCount
             totalSiteCount += 1
 
           if totalReadCount > 0:
             fdinu.write("%s\t%d\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalReadCount, totalSiteCount))
+
+      fout.write("%s\t%s\t%s\t%s\t%d\t%d\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file), totalFileReadCount, totalFileSiteCount))
         
   targetChromInfoFile =  os.path.join(targetFolder, "chromInfo.txt")
   shutil.copyfile(chromInfo_file, targetChromInfoFile)
@@ -139,7 +147,8 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion):
   options = {
     'inputFile':targetConfigFile,
     'chromInfoFile':targetChromInfoFile,
-    "block":block
+    "block":block,
+    'useRawCount':"1" if raw_count else "0"
   }
 
   targetScript = write_r_script(outputFilePrefix, rScript, options)

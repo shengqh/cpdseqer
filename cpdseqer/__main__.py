@@ -102,6 +102,7 @@ def main():
   parser_sg.add_argument('-i', '--input', action='store', nargs='?', help='Input configuration file', required=NOT_DEBUG)
   parser_sg.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count (default 100000)')
   parser_sg.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19 (default hg38)')
+  parser_sg.add_argument('-r', '--raw_count', action='store_true', help='Use raw count instead of normalize by total count')
   parser_sg.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "fig_position" command
@@ -186,7 +187,7 @@ def main():
     report(logger, args.input, args.group, args.output, args.block, args.db)
   elif args.command == "fig_genome":
     logger = initialize_logger(args.output + ".log", args)
-    fig_genome(logger, args.input, args.output, args.block, args.db)
+    fig_genome(logger, args.input, args.output, args.block, args.db, args.raw_count)
   elif args.command == "fig_position":
     logger = initialize_logger(args.output + ".log", args)
     fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)
