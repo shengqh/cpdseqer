@@ -61,7 +61,7 @@ def main():
   # create the parser for the "bam2dinucleotide" command
   parser_p = subparsers.add_parser('bam2dinucleotide', help='Extract dinucleotide from bam file')
   parser_p.add_argument('-i', '--input', action='store', nargs='?', help='Input BAM file', required=NOT_DEBUG)
-  parser_p.add_argument('-g', '--genome_seq_file', action='store', nargs='?', help='Input genome seq file', required=NOT_DEBUG)
+  parser_p.add_argument('-g', '--fasta', action='store', nargs='?', help='Input genome fasta file', required=NOT_DEBUG)
   parser_p.add_argument('-q', '--mapping_quality', type=int, default=20, nargs='?', help='Minimum mapping quality of read (default 20)', required=False)
   parser_p.add_argument('-m', '--min_coverage', type=int, default=1, help='The minimum coverage of dinucleotide for counting (default 1)')
   parser_p.add_argument('-u', '--unique_only', action='store_true', help='Use uniquely mapped read only')
@@ -117,7 +117,7 @@ def main():
 
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_u.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome version, hg38/hg19/saccer3 (default hg38)')
+  parser_u.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
   parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
@@ -175,7 +175,7 @@ def main():
   #   bowtie2(logger, args.input, args.output, args.database_prefix, args.thread)
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
-    bam2dinucleotide(logger, args.input, args.output, args.genome_seq_file, args.mapping_quality, args.unique_only, args.min_coverage, args.test)
+    bam2dinucleotide(logger, args.input, args.output, args.fasta, args.mapping_quality, args.unique_only, args.min_coverage, args.test)
   elif args.command == "qc":
     logger = initialize_logger(args.output + ".log", args)
     qc(logger, args.input, args.name, args.output, args.count_type)
