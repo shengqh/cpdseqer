@@ -57,9 +57,9 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
   
   for chr in chrDinuMap.keys():
     values = chrDinuMap[chr]
-    logger.info("sort %d dinucleotides of chromosome %s..." % (len(values), chr ))
+    logger.info("sort %d dinucleotides in chromosome %s..." % (len(values), chr ))
     values.sort(key=get_reference_start)
-    logger.info("combine %d dinucleotides of chromosome %s..." % (len(values), chr ) )
+    logger.info("combine %d dinucleotides in chromosome %s..." % (len(values), chr ) )
     idx = len(values) - 1
     deleteList = set()
     while(idx > 0):
@@ -76,7 +76,7 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
         prev = prev - 1
       idx = idx -1
     chrDinuMap[chr] = [i for j, i in enumerate(values) if j not in deleteList]
-    logger.info("after combine, there is %d dinucleotides of chromosome %s..." % (len(chrDinuMap[chr]), chr ) )
+    logger.info("after combine, there is %d dinucleotides in chromosome %s..." % (len(chrDinuMap[chr]), chr ) )
 
   if minCoverage > 1:
     for chr in chrDinuMap.keys():
