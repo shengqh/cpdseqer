@@ -6,35 +6,8 @@ import sys
 import shutil
 
 from .CategoryItem import CategoryItem
-from .common_utils import MUT_LEVELS, check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
+from .common_utils import MUT_LEVELS, check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script, ConfigItem, read_config_file
 from .__version__ import __version__
-
-class ConfigItem:
-  def __init__(self, name, dinucleotide_file, is_case ):
-    self.name = name
-    self.dinucleotide_file = dinucleotide_file
-    self.count_file = dinucleotide_file.replace(".bed.bgz", ".count")
-    self.is_case = is_case
-  
-  def __repr__(self):
-    return self.__str__()
-
-  def __str__(self):
-    return("[name=%s; dinucleotide_file=%s; count_file=%s; is_case=%s]" % (self.name, self.dinucleotide_file, self.count_file, self.is_case))
-
-def read_config_file(config_file):
-  result = []
-  with open(config_file, "rt") as fin:
-    headers = fin.readline().rstrip().split('\t')
-    name_index = headers.index("Name")
-    file_index = headers.index("File")
-    case_index = headers.index("Case")
-    for line in fin:
-      parts = line.rstrip().split('\t')
-      if len(parts) < len(headers):
-        continue
-      result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index]))
-  return(result)
 
 def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count):
   check_file_exists(configFile)
@@ -44,7 +17,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
 
   for item in items:
     check_file_exists(item.dinucleotide_file)
-    check_file_exists(item.dinucleotide_file + ".tbi")
+    check_file_exists(item.index_file)
     check_file_exists(item.count_file)
 
   targetFolder = os.path.dirname(outputFilePrefix)
@@ -91,10 +64,9 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
   logger.info("Processing dinucleotide files ...")
   targetConfigFile = outputFilePrefix + ".config.txt"
   with open(targetConfigFile, "wt") as fout:
-    fout.write("Group\tSample\tDinuFile\tCountFile\tTotalRead\tTotalSite\n")
+    fout.write("Sample\tDinuFile\tCountFile\tTotalRead\tTotalSite\n")
     for item in items:
       dinuName = item.name
-      dinuGroup = item.is_case
       dinuFile = item.dinucleotide_file
       targetDinuFile = os.path.join(targetFolder, "%s_block%d.txt" % (os.path.basename(dinuFile), block))
 
@@ -139,7 +111,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
           if totalReadCount > 0:
             fdinu.write("%s\t%d\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalReadCount, totalSiteCount))
 
-      fout.write("%s\t%s\t%s\t%s\t%d\t%d\n" % (dinuGroup, dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file), totalFileReadCount, totalFileSiteCount))
+      fout.write("%s\t%s\t%s\t%d\t%d\n" % (dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file), totalFileReadCount, totalFileSiteCount))
         
   targetChromInfoFile =  os.path.join(targetFolder, "chromInfo.txt")
   shutil.copyfile(chromInfo_file, targetChromInfoFile)
