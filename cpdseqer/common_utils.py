@@ -179,4 +179,26 @@ def read_chromosomes(countFile):
     return (sorted(list(chromMap.keys())))
     
 def get_count_file(dinucleotide_file):
-  return(dinucleotide_file.replace(".bed.gz", ".count"))
+  return(dinucleotide_file.replace(".bed.bgz", ".count"))
+
+class ConfigItem:
+  def __init__(self, name, dinucleotide_file):
+    self.name = name
+    self.dinucleotide_file = dinucleotide_file
+    self.index_file = dinucleotide_file + ".tbi"
+    self.count_file = get_count_file(dinucleotide_file)
+  
+  def __repr__(self):
+    return self.__str__()
+
+  def __str__(self):
+    return("[name=%s; dinucleotide_file=%s; count_file=%s]" % (self.name, self.dinucleotide_file, self.count_file))
+
+def read_config_file(config_file):
+  result = []
+  with open(config_file, "rt") as fin:
+    for line in fin:
+      parts = line.rstrip().split('\t')
+      result.append(ConfigItem(parts[1], parts[0]))
+  
+  return(result)
