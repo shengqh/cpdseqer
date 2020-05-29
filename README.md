@@ -115,7 +115,7 @@ You can download hg38 bowtie2 index files:
 ```
 mkdir hg38
 cd hg38
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/hg38_bowtie2.tar.gz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_bowtie2.tar.gz
 tar -xzvf hg38_bowtie2.tar.gz
 cd ..
 ```
@@ -204,7 +204,7 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.count
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list
 ```
 
-The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
+The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
 
 |||
 |---|---|
@@ -291,18 +291,7 @@ for example:
 cpdseqer fig_genome -i dinucleotide.list -d hg38 -o output_prefix
 ```
 
-[dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate file path and file name which are seprated by tab.
-
-|||
-|---|---|
-|Control.bed.bgz|Control|
-|UV.bed.bgz|UV|
-
-You can download it from:
-
-```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list
-```
+The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
 
 # Running cpdseqer using singularity
 
