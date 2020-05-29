@@ -99,11 +99,11 @@ def main():
 
   # create the parser for the "fig_genome" command
   parser_sg = subparsers.add_parser('fig_genome', help="Generate statistic figure on genome/chromosome level")
-  parser_sg.add_argument('-i', '--input', action='store', nargs='?', help='Input configuration file', required=NOT_DEBUG)
+  parser_sg.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_sg.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count (default 100000)')
   parser_sg.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19 (default hg38)')
   parser_sg.add_argument('-r', '--raw_count', action='store_true', help='Use raw count instead of normalize by total count')
-  parser_sg.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+  parser_sg.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   # create the parser for the "fig_position" command
   parser_f = subparsers.add_parser('fig_position', help='Generate statistic figure on relative position in coordinate file')

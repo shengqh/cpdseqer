@@ -254,50 +254,54 @@ wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg3
 
 ```
 
-You can download hg38 and yeast background file from:
+You can download hg19/hg38 and yeast background file from:
 
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.count
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/XXXXX.count
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg19_Naked.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg19_Naked.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg19_Naked.count
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_Naked.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_Naked.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_Naked.count
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.bed.bgz
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.count
 ```
 
-## Draw genome/chromosome figure
+## Generate a genome-wide UV damage distribution map
 
 ```
-usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] -o [OUTPUT]
+usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] [-r] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i [INPUT], --input [INPUT]
-                        Input configuration file
+                        Input dinucleotide list file, first column is file location, second column is file name
   -b [BLOCK], --block [BLOCK]
-                        Block size for summerize dinucleotide count
-  -d [DB], --db [DB]    Input database version, hg38 or hg19, default is hg38
+                        Block size for summerize dinucleotide count (default 100000)
+  -d [DB], --db [DB]    Input database version, hg38 or hg19 (default hg38)
+  -r, --raw_count       Use raw count instead of normalize by total count
   -o [OUTPUT], --output [OUTPUT]
-                        Output file name
+                        Output file prefix
 ```
 
 for example:
 
 ```
-cpdseqer fig_genome -i fig_genome.input.txt -d hg38 -o cpd.report
+cpdseqer fig_genome -i dinucleotide.list -d hg38 -o output_prefix
 ```
 
-[fig_genome.input.txt](https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/fig_genome.input.txt) contains three columns indicate name, file and group (1=case and 0=control) which are seprated by tab.
+[dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate file path and file name which are seprated by tab.
 
-|Name|File|Case|
-|---|---|---|
-|Control|Control.bed.bgz|0|
-|UV|UV.bed.bgz|1|
+|||
+|---|---|
+|Control.bed.bgz|Control|
+|UV.bed.bgz|UV|
 
 You can download it from:
 
 ```
-wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/fig_genome.input.txt
+wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list
 ```
 
 # Running cpdseqer using singularity
