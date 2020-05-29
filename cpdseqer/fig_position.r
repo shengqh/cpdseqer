@@ -6,11 +6,14 @@ outfilePrefix=args[2]
 options(bitmapType='cairo')
 
 #load Rcpp package first because of the error with reshape2 package
-library(Rcpp)
-library(grid)
-library(reshape2)
-library(ggplot2)
-library(RColorBrewer)
+required.pkg <- c("Rcpp", "grid", "reshape2", "ggplot2", "RColorBrewer")
+for (pkg in required.pkg) {
+  if(!require(pkg, character.only = TRUE)){
+    install.packages(pkg, dependencies = TRUE)
+    require(pkg, character.only = TRUE)
+  }
+}
+
 
 posmelt<-read.delim(inputFile, header=T,as.is=T, stringsAsFactor=F)
 
