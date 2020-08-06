@@ -9,7 +9,7 @@ from .CategoryItem import CategoryItem
 from .common_utils import MUT_LEVELS, check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script, ConfigItem, read_config_file
 from .__version__ import __version__
 
-def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count):
+def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, normType):
   check_file_exists(configFile)
 
   items = read_config_file(configFile)
@@ -38,6 +38,8 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
   level_chr = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
   #level_mut = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
   level_mut = set(MUT_LEVELS)
+  gc_mut = set(MUT_LEVELS)
+  gc_mut.add("GC")
 
   logger.info("Reading chromosome length from: %s ..." % chromInfo_file)
   catItems = []# List<CategoryItem>
@@ -78,7 +80,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
       dinuMap = {}
       logger.info("Processing %s ..." % dinuFile)
       with open(targetDinuFile, "wt") as fdinu:
-        fdinu.write("Chrom\tStart\tEnd\tReadCount\tSiteCount\n")
+        fdinu.write("Chrom\tStart\tEnd\tDinucleotide\tReadCount\tSiteCount\tReadCount_GC\tSiteCount_GC\n")
         tb = tabix.open(dinuFile)
 
         count = 0
@@ -90,8 +92,8 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
           #logger.info("Processing %s:%d-%d ..." %(catItem.reference_name, catItem.reference_start, catItem.reference_end))
           tbiter = tb.query(catItem.reference_name, catItem.reference_start, catItem.reference_end)
           records = [record for record in tbiter]
-          totalReadCount = 0
-          totalSiteCount = 0
+          totalReadCount = {lm:0 for lm in gc_mut}
+          totalSiteCount = {lm:0 for lm in gc_mut}
           for record in records:
             dinucleotide = record[3]
 
@@ -102,14 +104,26 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
             totalFileReadCount += diCount
             totalFileSiteCount += 1
 
-            if dinucleotide not in level_mut:
+            if dinucleotide not in gc_mut:
               continue
 
-            totalReadCount += diCount
-            totalSiteCount += 1
+            totalReadCount[dinucleotide] += diCount
+            totalSiteCount[dinucleotide] += 1
 
-          if totalReadCount > 0:
-            fdinu.write("%s\t%d\t%d\t%d\t%d\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, totalReadCount, totalSiteCount))
+          if sum(totalReadCount[lm] for lm in level_mut) > 0:
+            gc_read = totalReadCount["GC"]
+            gc_site = totalSiteCount["GC"]
+            if gc_read == 0:
+              gc_read = 1
+            if gc_site == 0:
+              gc_site = 1
+            for lm in level_mut:
+              if totalReadCount[lm] > 0:
+                fdinu.write("%s\t%d\t%d\t%s\t%d\t%d\t%lf\t%lf\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, lm, totalReadCount[lm], totalSiteCount[lm], totalReadCount[lm] / gc_read, totalSiteCount[lm] / gc_site))
+            
+            m4_read = sum(totalReadCount[lm] for lm in level_mut)
+            m4_site = sum(totalSiteCount[lm] for lm in level_mut)
+            fdinu.write("%s\t%d\t%d\t%s\t%d\t%d\t%lf\t%lf\n" % (catItem.reference_name, catItem.reference_start, catItem.reference_end, "M4", m4_read, m4_site, m4_read / gc_read, m4_site / gc_site))
 
       fout.write("%s\t%s\t%s\t%d\t%d\n" % (dinuName, os.path.abspath(targetDinuFile), os.path.abspath(item.count_file), totalFileReadCount, totalFileSiteCount))
         
@@ -120,7 +134,7 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, raw_count
     'inputFile':targetConfigFile,
     'chromInfoFile':targetChromInfoFile,
     "block":block,
-    'useRawCount':"1" if raw_count else "0"
+    'normType':normType
   }
 
   targetScript = write_r_script(outputFilePrefix, rScript, options)
