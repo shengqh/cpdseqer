@@ -271,7 +271,7 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.count
 ## Generate a genome-wide UV damage distribution map
 
 ```
-usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] [-r] -o [OUTPUT]
+usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] [-n [{None,Total,LocalGC}]] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -280,7 +280,8 @@ optional arguments:
   -b [BLOCK], --block [BLOCK]
                         Block size for summerize dinucleotide count (default 100000)
   -d [DB], --db [DB]    Input database version, hg38 or hg19 (default hg38)
-  -r, --raw_count       Use raw count instead of normalize by total count
+  -n [{None,Total,LocalGC}], --norm_type [{None,Total,LocalGC}]
+                        Normalization type
   -o [OUTPUT], --output [OUTPUT]
                         Output file prefix
 ```
@@ -288,7 +289,7 @@ optional arguments:
 for example:
 
 ```
-cpdseqer fig_genome -i dinucleotide.list -d hg38 -o output_prefix
+cpdseqer fig_genome -i dinucleotide.list -d hg38 -n Total -o output_prefix
 ```
 
 The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
