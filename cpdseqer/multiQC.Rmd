@@ -30,6 +30,8 @@ exp <- 'Experiment' # or a study
 DINUC4 <- c('TT','TC','CC','CT')
 cntType <- 'rCnt'
 nDigit <- 3
+gn <- 'hg38'
+attach(QCrefRange[[gn]])
 for (assignment in optAssignments) {
   eval(parse(text=assignment))
 }
@@ -39,7 +41,7 @@ if (!exists('smps')) {
 } else {
 	meta <- read.delim(smps,head=F,as.is=T)
 	K <- nrow(meta)
-	feedback=paste0('**Study**: *',exp,'*; *',K,'* *samples;* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
+	feedback=paste0('**Study**: *',exp,'*; **Genome**: *',gn,'*; ',K,'* *samples;* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
 	feedback <- gsub('rCnt','ReadCount',feedback)
 	feedback <- gsub('sCnt','SiteCount',feedback)
 	effRange <- switch(cntType,
@@ -69,25 +71,7 @@ if (!exists('smps')) {
 	tbl3indices <- cbind(Efficiency=signif(effs,nDigit),Contrast=signif(conts,nDigit),Symmetry=paste(syms,1,sep=':'))
 	colnames(tbl3indices)[3] <- 'Symmetry (Forward:Reverse)'
 	rownames(tbl3indices) <- samples
-	#plotM_rcDistrib(bedS)
 }
-
-
-if (FALSE) {"
-  bgz <- paste0('/home/installer/CPD/GSE103487_human_single/result/',mao2018,'.fastq.dinucleotide.bed.bgz.bed.bgz')
-  K <- length(bgz) # nSamples
-  bedS <- vector('list',10)
-  names(bedS) <- mao2018
-  for (i in 1:K) {
-    cat(mao2018[i],'\n')
-    symRes <- symmetry(bgz[i],'rCnt')
-    bed <- symRes$bed
-    bedS[[i]] <- bed[bed[,4]%in%c('TT','TC','CC','CT'),]
-    #sym <- symRes$sym7[,'DINUC4'] # Symmetry only considers DINUC4
-    #sym <- signif(sym[1]/sym[2],nDigit)
-  }
-  plotM_rcDistrib(bedS)
-"}
 ```
 
 # Parameters for `r exp`
@@ -104,7 +88,8 @@ __Read Count Distribution__
 ```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 plotM_EffCont(effs,conts,effRange,contRange,exp)
 knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
-Freq <- plotM_rcDistrib(bedS,exp,dinuc,pts=c(0,5,10))
+Freq <- plotM_rcDistrib(bedS,exp,gn,dinuc,pts=c(0,5,10)) # UPDATE 8/6/20 with added gn argument
+detach(QCrefRange[[gn]])
 ```
 
 # QC tables

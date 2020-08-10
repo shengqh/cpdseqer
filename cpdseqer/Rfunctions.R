@@ -1,4 +1,34 @@
-# Added with multiQC functions relative to GitHub version 05/20/20
+# Modified from GitHub version 08/04/20
+
+dinuc4p <- list(
+	hg19=c(TT=0.0986,TC=0.0595,CC=0.0515,CT=0.0700),#0.7204
+	hg38=c(TT=0.0980,TC=0.0594,CC=0.0521,CT=0.0700),#0.7206
+	saccer3=c(TT=0.108,TC=0.062,CC=0.039,CT=0.058)#0.733
+)
+gnNucs <- c(hg38=3088269832,hg19=3095677412,saccer3=12157105) # Total nucleotide volume of each genome.
+### NOTE: Reference intervals of Efficiency were determined from ten human and five yeast CPD-seq samples as of May 2020.
+### NOTE: Reference interval of Contrast was determined from ten human CPD-seq samples as of May 2020.
+### UPDATE 08/04/2020: Efficiency reference intervals converted to the ratio concept in response to Ref. 1's advice.
+QCrefRange <- list(
+	hg19=list(
+		EffR.r=c(2.06,2.91),
+		EffR.s=c(2.06,2.88),
+		ContR.r=c(7.73,23.8), #ContRange.rCnt
+		ContR.s=c(7.47,23.2) #ContRange.sCnt
+	),
+  hg38=list(
+    EffR.r=c(2.06,2.91),
+    EffR.s=c(2.06,2.88),
+    ContR.r=c(7.73,23.8), #ContRange.rCnt
+    ContR.s=c(7.47,23.2) #ContRange.sCnt
+  ),
+  saccer3=list(
+    EffR.r=c(1.44,2.36),
+    EffR.s=c(1.30,1.81),
+    ContR.r=c(7.73,23.8), #ContRange.rCnt
+    ContR.s=c(7.47,23.2) #ContRange.sCnt
+  )
+)
 # singleSample(): When only one (group of) sample is specified, performs Chisq test for overall 5 categories and one-vs-other test for four DINUCs.
 
 # INPUT smp: either file name or read-in data.frame for single sample. (When reg is specified, smp must be preprocessed to contain counts for the corresponding region.)
@@ -14,11 +44,7 @@ singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.ts
 	gn <- tolower(gn)
 	DINUC4 <- c('TT','TC','CC','CT')
 	if (is.null(reg)) { # Simplest case: no specification of region
-		p4gn <- switch(gn,
-			hg38=c(0.0986,0.0595,0.0515,0.0700), #0.7204
-			hg19=c(0.0980,0.0594,0.0521,0.0700), #0.7206
-			saccer3=c(0.108,0.062,0.039,0.058), #0.733
-		) # Limited to considered few refGenomes.
+		p4gn <- dinuc4p[[gn]] # UPDATE 08/04/20
 	} else { # parse out p4 vector when reg is supplied.
 		p4gn <- parseReg(reg,gn,cnt5file=cnt5file)[1:4]
 	} # expected probablility vector for five categories.
@@ -182,15 +208,13 @@ twoGrp <- function(smp1,smp2,cntType='rCnt',nDigit=4,DINUC4=c('TT','TC','CC','CT
 }
 
 # collapse.cntFile(): Given one cnt filename, derive smpCnt (five cnts) vector.
-# (interim) UPDATE 5/10/20: Enforce 3rd column named "ReadCount"
-# UPDATE 5/9/20: add option cntType with default value of rCount.
 # INPUT smp: sample file name (.cnt) or a data frame
 collapse.cntFile <- function(smp,cntType=c('rCnt','sCnt')[1],chrs=NULL,DINUC4=c('TT','TC','CC','CT')) {
 	if (!require(reshape2))
 		stop('Please install library reshape2 for dcast function')
 	if (length(as.vector(smp))==1)
 		smp <- read.delim(smp,as.is=T)
-	colnames(smp)[3] <- 'ReadCount' # UPDATE 5/10/20 to accomodate old-versioned CNT file.
+	colnames(smp)[3] <- 'ReadCount'
 	if (!is.null(chrs))
 		smp <- smp[smp[,'Chromosome']%in%chrs,]
 	dinuc16 <- genPerm2()
@@ -217,7 +241,7 @@ collapse16.cntFile <- function(smp,cntType=c('rCnt','sCnt')[1],chrs=NULL,DINUC4=
     stop('Please install library reshape2 for dcast function')
   if (length(as.vector(smp))==1)
     smp <- read.delim(smp,as.is=T)
-	colnames(smp)[3] <- 'ReadCount' # UPDATE 5/10/20 to accomodate old-versioned CNT file.
+	colnames(smp)[3] <- 'ReadCount'
   if (!is.null(chrs))
     smp <- smp[smp[,'Chromosome']%in%chrs,]
   dinuc16 <- genPerm2()
@@ -323,11 +347,14 @@ convert.cntUnit <- function(cnt0,unit2=c(1e6,1e3)) {
 ############################ QC functions below ################################################
 ################################################################################################
 
-
+# UPDATE 8/4/2020: Per Ref. 1's suggestion, normalize away genome dinucleotide composition.
+### Divide raw efficiency by genome composition proportion.
+### Add one more argument: gn
 # efficiency(): Calculate efficiency of a single sample (CNT file).
 # smp: sample CNT file or a 6-columned bed data frame.
 # cntType: allow toggling between rCnt (default) & sCnt.
-efficiency <- function(smp,cntType=c('rCnt','sCnt')[1],nDigit=3) {
+# gn: the genome used [hg19,hg38,saccer3]. 
+efficiency <- function(smp,cntType=c('rCnt','sCnt')[1],gn='hg38',nDigit=3) {
 	DINUC4=c('TT','TC','CC','CT')
 	if (length(as.vector(smp))==1) {
 		cnt5 <- collapse.cntFile(smp,cntType)
@@ -337,6 +364,8 @@ efficiency <- function(smp,cntType=c('rCnt','sCnt')[1],nDigit=3) {
 	}
 	dinuc4 <- sum(cnt5[DINUC4],na.rm=T)
 	eff <- sum(dinuc4,na.rm=T)/sum(cnt5,na.rm=T)
+	eff0 <- sum(dinuc4p[[gn]]) # UPDATE: baseline proportion of DINUC4 in genome
+	eff <- eff/eff0 # UPDATE: now efficiency becomes a ratio or raw efficiency over background proportion.
 	eff <- signif(eff,nDigit)
 	eff 
 }
@@ -412,12 +441,8 @@ bed2cnt <- function(bed,cntType=c('rCnt','sCnt')[1],chrs=NULL) {
 #sym7 <- symRes$sym7
 
 # plot_EfforCont(): Plot left-and-right two panels for Eff & Cont, respectively.
-### NOTE: The following four reference intervals are determined from ten human CPD-seq samples as of May 2020.
-EffR.r=c(0.576,0.813) #EffRange.rCnt
-EffR.s=c(0.575,0.805) #EffRange.sCnt
-ContR.r=c(7.73,23.8) #ContRange.rCnt
-ContR.s=c(7.47,23.2) #ContRange.sCnt
-plot_EffCont <- function(eff2,cont2,sample='Sample',EffRange.rCnt=EffR.r,EffRange.sCnt=EffR.s,ContRange.rCnt=ContR.r,ContRange.sCnt=ContR.s) {
+# UPDATE 8/5/2020: removed default value for EffRange.rCnt, EffRange.sCnt, ContRange.rCnt, and ContRange.sCnt.
+plot_EffCont <- function(eff2,cont2,sample='Sample',EffRange.rCnt,EffRange.sCnt,ContRange.rCnt,ContRange.sCnt) {
 	names(eff2) <- names(cont2) <- c('by_ReadCount','by_SiteCount')
 	layout(matrix(1:2,nr=1))
 	plot_DotByStem(eff2,sample=sample,index='Efficiency',range.rCnt=EffRange.rCnt,range.sCnt=EffRange.sCnt)
@@ -426,13 +451,13 @@ plot_EffCont <- function(eff2,cont2,sample='Sample',EffRange.rCnt=EffR.r,EffRang
 
 # plot_DotByStem(): plot stem-and-dot figure for one index, either Efficiency or Contrast.
 # INPUT indexVal: two values of the index, named c('by_ReadCount','by_SiteCount')
-# INPUT range.rCnt (byReadCount) of Efficiency out of 10 human samples: c(0.576,0.813)
-# INPUT range.rCnt (byReadCount) of Contrast out of 10 human samples: c(7.7,23.8) 
-
+# INPUT range.rCnt (byReadCount) of Efficiency out of 10/5 human/yeast samples: c(2.06,2.91) or c(1.44,2.36)
+# INPUT range.rCnt (byReadCount) of Contrast out of 10/5 human/yeast samples: c(7.7,23.8) 
+# UPDATE 8/5/2020: changed xlim() of Efficiency from (0,1) to (0,5)
 plot_DotByStem <- function(indexVal,range.rCnt=c(0.576,0.813),range.sCnt=c(0.576,0.813), sample='Sample',index='Efficiency') {
 	par(mar=c(6,8,4,2),cex.main=1.5,cex.axis=1.5,cex.lab=1.5,bty='l')#mar=c(6,8,4,2),
 	xInterval <- switch(index,
-		Efficiency=c(0,1),
+		Efficiency=c(0,5),
 		Contrast=c(0,30)
 	)
 	x.offset <- switch(index,
@@ -451,7 +476,7 @@ plot_DotByStem <- function(indexVal,range.rCnt=c(0.576,0.813),range.sCnt=c(0.576
 
 # plot_sym7(): Given 2-by-7 indices of symmetry, plot seven horizontal bars to signify symmetry situation.
 plot_sym7 <- function(sym7,sample='') {
-	par(mar=c(6,8,4,10),fin=c(12,6),cex.axis=1.5,cex.main=1.5) # UPDATE 05/21/20 fin
+	par(mar=c(6,8,4,10),fin=c(12,6),cex.axis=1.5,cex.main=1.5)
 	sym7.normed <- t(t(sym7)/colSums(sym7))
 	barplot(sym7.normed[,ncol(sym7.normed):1],horiz=T,las=1,main=paste(sample,'Symmetry'),legend.text=T,
 		args.legend=list(x='right',pt.cex=2,cex=1.5,bty='n',inset=c(-0.8,0)))
@@ -459,13 +484,16 @@ plot_sym7 <- function(sym7,sample='') {
 }
 
 # plot_rcDistrib(): Take the bed data frame as primary input, plot a groupped barplot for three levels of readCounts.
+# UPDATE 8/6/2020 to implement percentage plot via rcSitePctg().
+# UPDATE 8/6/2020 
 # INPUT bed0: secondary output of symmetry().
+# INPUT gn: genome (species) of the CPD sample.
 # INPUT pts: default to c(0,5,10) points where frequency of higher readCounts is visualized. 
 # INPUT sample: sample name, to be prefixed to title (main) of figure.
-# OUTPUT Freq: Five-by-three count frequncy table. Top four rows for TT, TC, CC, and CT, bottom row for All. 
+# OUTPUT Freq: Five-by-six count frequncy table. Top four rows for TT, TC, CC, and CT, bottom row for All. 
 ######## 5 Rows: TT, TC, CC, CT, and All
-######## 3 Columns: >0, >5, >10
-plot_rcDistrib <- function(bed0,sample='',pts=c(0,5,10)) {
+######## 6 Columns: two sets of three read count levels (>0, >5, >10), for frequency (1st-3rd) and percentage (4th-6th).
+plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
 	rc0 <- bed0[,5]
   DINUC4=c('TT','TC','CC','CT')
 	bed <- bed0[bed0[,4]%in%DINUC4,]
@@ -476,37 +504,91 @@ plot_rcDistrib <- function(bed0,sample='',pts=c(0,5,10)) {
 	Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
 	Freq.all <- exceedingCnt(rc0,pts)	
 	colnames(Freq) <- paste('Reads',pts,sep='>')
-	par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5) # UPDATE 05/21/20 fin
-	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nRead Count Frequency'),legend.text=T,
+	pctg.all <- rcSitePctg(bed0,gn,pts) # UPDATE 8/6/2020
+  layout(matrix(1:2,nr=1))	
+	par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5)
+	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
 		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
 	mtext(side=2,line=5,text='Frequency',cex=2)
+	barplot(pctg.all[-nrow(pctg.all),],beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
+		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
+	mtext(side=2,line=5,text='Percentage',cex=2)
   #tiff(paste0('rcDistrib_truncate',truncate,'.tif'),width=2048,height=1600)
   #dev.off()
-  rbind(Freq,All=Freq.all) 
+  freqTbl <- rbind(Freq,All=Freq.all)
+	colnames(pctg.all) <- paste(colnames(freqTbl),'(percentage)')
+	colnames(freqTbl) <- paste(colnames(freqTbl),'(frequency)')
+	freqPctgTbl <- cbind(freqTbl,pctg.all)
+	freqPctgTbl 
 }
 
+# rcSitePctg(): Calculate percentages of genome-wide dinucleotides exceeding given read count thresholds
+# NOTE: using forward (+) sites only.
+# Refers to global objects gnNucs & dinuc4p 
+# INVOKED by rcSitePctg2one(),plot_rcDistrib(). 
+# INPUT bed0: data frame read from bed file (secondary output of symmetry()) 
+# OUTPUT: Five-by-three percentage site table. Top four rows for TT, TC, CC, and CT, bottom row for All.
+rcSitePctg <- function(bed0,gn='hg38',pts=c(0,5,10)) { # Read Count Sites Percentages
+	bed0 <- bed0[bed0[,6]=='+',] # using forward (+) sites only.
+	rc <- bed0[,5]
+	DINUC4=c('TT','TC','CC','CT')
+	RC4 <- split(rc,factor(bed0[,4]))[DINUC4]
+	scope <- floor(dinuc4p[[gn]]*(2*gnNucs[gn]))
+  Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
+	pctg <- Freq/scope
+  Freq.all <- exceedingCnt(rc,pts)
+	pctg.all <- Freq.all/(2*gnNucs[gn])
+	pctgCols <- rbind(pctg,All=pctg.all)
+	pctgCols # percentage columns
+}
 # exceedingCnt(): How many values of rc exceed (>) the specified value of pt? 
-# UPDATE 5/15/20: Allow pt to be flexible, scalar or vector
+# INPUT pt: is flexible, scalar or vector
+# OUTPUT: incidences exceeding the given thresholds. Of the same length as pt.
 exceedingCnt <- function(rc,pt) {
 	freq <- sapply(pt, function(x)  sum(rc>x,na.rm=T))
 	freq
 }
 # plotM_rcDistrib(): Given a list of bgz bed data frames, plot barplots of readCounts for multiple samples, at given cut-off points.
+# UPDATE 8/6/2020 to render one additional rcSite (percentage) plot.
 # INPUT bedS: a list of K components, corresponding to K samples in a batch.
 # dinuc takes value from {'TT','TC','CC','CT'} or any combination
-plotM_rcDistrib <- function(bedS,exp='Experiment',dinuc=c('TT','TC','CC','CT'),pts=c(0,5,10)) {
-	K <- length(bedS)
+# OUTPUT: K by 6 percentage table; K is number of samples and 6 columns are for three frequency vals and three percentage vals. 
+plotM_rcDistrib <- function(bedS,exp='Experiment',gn='hg38',dinuc=c('TT','TC','CC','CT'),pts=c(0,5,10)) {
+	#K <- length(bedS)
+	pctgs <- t(sapply(bedS,rcSitePctg2one,gn,dinuc,pts))
 	bedS <- lapply(bedS,function(x,scope) x[x[,4]%in%scope,],dinuc)
 	rcS <- lapply(bedS,function(x) x[,5])	
 	Freq <- sapply(rcS,exceedingCnt,pts) # count matrix: pts by sample
 	Freq <- t(Freq) # transpose to sample by pts
-	colnames(Freq) <- paste('Reads',pts,sep='>')
-	Freq <- Freq[order(-Freq[,1]),]
+	colnames(pctgs) <- colnames(Freq) <- paste('Reads',pts,sep='>')
+	Freq1 <- Freq[order(-Freq[,1]),]
+	layout(matrix(1:2,nr=1))
   par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5) #mar=c(6,8,6,2),
-  barplot(Freq,beside=T,log='y',las=1,main=paste(exp,'\nRead Count Frequency'),legend.text=T,
+  barplot(Freq1,beside=T,log='y',las=1,main=paste(exp,'\nCPD-forming dinuceotides'),legend.text=T,
     args.legend=list(x='topright',bty='n',pt.cex=1.2))
   mtext(side=2,line=5,text='Frequency',cex=2)
-	Freq
+	pctgs1 <- pctgs[order(-pctgs[,1]),]
+  barplot(pctgs1,beside=T,log='y',las=1,main=paste(exp,'\nCPD-forming dinuceotides'),legend.text=T,
+    args.legend=list(x='topright',bty='n',pt.cex=1.2))
+  mtext(side=2,line=5,text='Percentage',cex=2)
+  colnames(pctgs) <- paste(colnames(Freq),'(percentage)')
+  colnames(Freq) <- paste(colnames(Freq),'(frequency)')
+  freqPctgTbl <- cbind(Freq,pctgs)
+	freqPctgTbl
+}
+# rcSitePctg2one(): Collapse multiple rows of percentages for TT, TC, CC, and CT to one row based on weighted sum of dinuc combinations.
+# NOTE: Refers to dinuc4p[[gn]]
+# INVOKED by plotM_rcDistrib()
+# INPUT bed0: data frame read from bed file (secondary output of symmetry()) 
+# INPUT dinuc: default to DINUC4, but can be any combination of DINUC4.
+# OUTPUT: one vector for the percentages over various read count thresholds (given by pts). 
+rcSitePctg2one <- function(bed0,gn='hg38',dinuc=c('TT','TC','CC','CT'),pts=c(0,5,10)) {
+	res <- rcSitePctg(bed0,gn,pts)[dinuc,]
+	gnProp <- dinuc4p[[gn]][dinuc]
+	gnProp <- gnProp/sum(gnProp)	
+	res <- colSums(res*gnProp)
+	names(res) <- paste0('>',pts)
+	res
 }
 # plotM_EffCont(): Calculate Efficiency & Contrast for multiple samples and plotted them in left-and-right panels.
 # INPUT effs: Efficiency values for K samples.
