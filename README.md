@@ -101,13 +101,8 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode.txt
 ## Align reads to genome using bowtie2
 
 ```
-bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz -S Control.sam 2> Control.log
-  
-samtools view -Shu -F 256 Control.sam | samtools sort -o Control.bam -T Control -
-
+bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz | samtools sort -@ 8 -m 4G -o Control.bam -T Control -
 samtools index Control.bam
-
-rm Control.sam
 ```
 
 You can download hg38 bowtie2 index files:
