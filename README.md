@@ -98,6 +98,19 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/example.fastq.gz
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode.txt
 ```
 
+An alternative method to perform demultiplex is using [Je](https://gbcs.embl.de/portal/tiki-index.php?page=Je).
+
+```
+je demultiplex F1=example.fastq.gz BF=barcode_je.txt O=.
+```
+
+The [barcode_je.txt](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
+
+||||
+|---|---|---|
+|Control|ATCGCGAT|Control.fastq.gz|
+|UV|GAACTGAT|UV.fastq.gz|
+
 ## Align reads to genome using bowtie2
 
 ```
