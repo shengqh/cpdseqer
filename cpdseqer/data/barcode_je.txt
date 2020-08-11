@@ -1,0 +1,2 @@
+Control	ATCGCGAT	Control.fastq.gz
+UV	GAACTGAT	UV.fastq.gz
