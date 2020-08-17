@@ -169,7 +169,6 @@ def background(fasta_file, bed_file, output_file):
                 
                 for chr_ID in np.unique(np.array(sub_data_chrom)):   
                     aa = [index for index, value in enumerate(sub_data_chrom) if (value == chr_ID) ]  
-                    sub_sub_data_chrom = [sub_data_chrom[i] for i in aa] 
                     sub_sub_start_pos = [sub_start_pos[i] for i in aa] 
                     sub_sub_end_pos = [sub_end_pos[i] for i in aa]
                     

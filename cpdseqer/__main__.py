@@ -15,6 +15,7 @@ from .fig_genome_utils import fig_genome
 from .fig_position_utils import fig_position
 from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region, uv_comp_regions, uv_comp_groups, uv_comp_groups_region
 from .qc_utils import qc
+from .filter_utils import filter
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
@@ -68,6 +69,13 @@ def main():
   parser_p.add_argument('-t', '--test', action='store_true', help='Test the first 1000000 reads only')
   parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
+  # create the parser for the "filter" command
+  parser_f = subparsers.add_parser('filter', help='Filter dinucleotide from dinucleotide file')
+  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide file', required=NOT_DEBUG)
+  parser_f.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file', required=NOT_DEBUG)
+  parser_f.add_argument('-m', '--method', action='store', nargs='?', choices=list(["subtract", "intersect"]), default="subtract", help='Filter type')
+  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
   # parser_q = subparsers.add_parser('qc', help='Quality control based on dinucleotide count result')
   # parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide prefix', required=NOT_DEBUG)
   # parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input sample name')
@@ -77,7 +85,7 @@ def main():
   parser_q = subparsers.add_parser('qc', help='Quality control based on multiple dinucleotide count results')
   parser_q.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_q.add_argument('-n', '--name', action='store', nargs='?', help='Input project name')
-  parser_q.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_q.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_q.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   # create the parser for the "statistic" command
@@ -118,7 +126,7 @@ def main():
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_u.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
-  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_genome_region', help='Compare UV radiation damage between sample(s) and reference genome background in specific region')
@@ -127,7 +135,7 @@ def main():
   parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
   parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
   parser_u.add_argument('-f', '--fasta', action='store', nargs='?', help='Input reference genome fasta file')
-  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_regions', help='Compare UV radiation damage between different regions in genome')
@@ -137,13 +145,13 @@ def main():
   parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
   parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
   parser_u.add_argument('-f', '--fasta', action='store', nargs='?', help='Input reference genome fasta file')
-  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_groups', help='Compare UV radiation damage between different sample groups')
   parser_u.add_argument('-i1', '--input1', action='store', nargs='?', help='Input CPD count list file 1, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_u.add_argument('-i2', '--input2', action='store', nargs='?', help='Input CPD count list file 2, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_groups_region', help='Compare UV radiation damage between different sample groups in specific region')
@@ -152,7 +160,7 @@ def main():
   parser_u.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)', required=False)
   parser_u.add_argument('-s', '--space', action='store_true', help='Use space rather than tab in coordinate file')
   parser_u.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
-  parser_u.add_argument('--count_type', action='store', nargs='?', default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
+  parser_u.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_u.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
   
   if not DEBUG and len(sys.argv) == 1:
@@ -176,6 +184,9 @@ def main():
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
     bam2dinucleotide(logger, args.input, args.output, args.fasta, args.mapping_quality, args.unique_only, args.min_coverage, args.test)
+  elif args.command == "filter":
+    logger = initialize_logger(args.output + ".log", args)
+    filter(logger, args.input, args.coordinate_file, args.output, args.method)    
   elif args.command == "qc":
     logger = initialize_logger(args.output + ".log", args)
     qc(logger, args.input, args.name, args.output, args.count_type)

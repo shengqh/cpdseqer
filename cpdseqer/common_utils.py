@@ -4,6 +4,7 @@ import logging
 import errno
 import shutil
 import hashlib
+from shutil import which
 
 MUT_LEVELS=['TT','TC','CC','CT']
 DINU_LEVELS=['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT','TT', 'TA', 'TC', 'TG']
@@ -202,3 +203,17 @@ def read_config_file(config_file):
       result.append(ConfigItem(parts[1], parts[0]))
   
   return(result)
+
+def write_count_file(logger, outputFile, countMap):
+  logger.info("Writing count file %s ..." % outputFile)
+  with open(outputFile, "wt") as fout:
+    fout.write("Chromosome\tDinucleotide\tReadCount\tSiteCount\n")
+    for chrom in countMap.keys():
+      chromMap = countMap[chrom]
+      for dinucleotide in chromMap.keys():
+        countVec = chromMap[dinucleotide]
+        fout.write("%s\t%s\t%d\t%d\n" % (chrom, dinucleotide, countVec[0], countVec[1]))
+
+def check_tool_exists(name):
+  if which(name) is None:
+    raise Exception("Tool %s not found, please install it before calling cpdseqer" % name)

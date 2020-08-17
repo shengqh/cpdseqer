@@ -10,7 +10,7 @@ from Bio.Seq import Seq
 
 from .DinucleotideItem import DinucleotideItem
 
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap
+from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, write_count_file
 
 def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQuality=20, uniqueOnly=False, minCoverage=1, isTest=False):
   check_file_exists(bamFile)
@@ -114,13 +114,7 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
           fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
       countMap[chrom] = chromMap
   
-  with open(outputPrefix + ".count", "wt") as fout:
-    fout.write("Chromosome\tDinucleotide\tReadCount\tSiteCount\n")
-    for chrom in countMap.keys():
-      chromMap = countMap[chrom]
-      for dinucleotide in chromMap.keys():
-        countVec = chromMap[dinucleotide]
-        fout.write("%s\t%s\t%d\t%d\n" % (chrom, dinucleotide, countVec[0], countVec[1]))
+  write_count_file(logger, outputPrefix + ".count", countMap)
 
   runCmd("tabix -p bed %s " % outputFile, logger)
   logger.info("done.")
