@@ -539,6 +539,7 @@ rcSitePctg <- function(bed0,gn='hg38',pts=c(0,5,10)) { # Read Count Sites Percen
   Freq.all <- exceedingCnt(rc,pts)
 	pctg.all <- Freq.all/(2*gnNucs[gn])
 	pctgCols <- rbind(pctg,All=pctg.all)
+	colnames(pctgCols) <- paste('Reads',pts,sep='>') # UPDATE 8/19/20
 	pctgCols # percentage columns
 }
 # exceedingCnt(): How many values of rc exceed (>) the specified value of pt? 
