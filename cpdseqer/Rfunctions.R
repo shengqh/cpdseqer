@@ -1,5 +1,7 @@
-# Modified from GitHub version 08/04/20
-
+# New features in August 2020: 
+### 1. New definition of Efficiency; 
+### 2. Percentage of CPD-associated sites for single-sample QC;
+### 3. Normalization of library size with TMM reflected in multiQC and all three scenarios of statistical comparisons.
 dinuc4p <- list(
 	hg19=c(TT=0.0986,TC=0.0595,CC=0.0515,CT=0.0700),#0.7204
 	hg38=c(TT=0.0980,TC=0.0594,CC=0.0521,CT=0.0700),#0.7206
@@ -8,7 +10,6 @@ dinuc4p <- list(
 gnNucs <- c(hg38=3088269832,hg19=3095677412,saccer3=12157105) # Total nucleotide volume of each genome.
 ### NOTE: Reference intervals of Efficiency were determined from ten human and five yeast CPD-seq samples as of May 2020.
 ### NOTE: Reference interval of Contrast was determined from ten human CPD-seq samples as of May 2020.
-### UPDATE 08/04/2020: Efficiency reference intervals converted to the ratio concept in response to Ref. 1's advice.
 QCrefRange <- list(
 	hg19=list(
 		EffR.r=c(2.06,2.91),
@@ -30,16 +31,17 @@ QCrefRange <- list(
   )
 )
 # singleSample(): When only one (group of) sample is specified, performs Chisq test for overall 5 categories and one-vs-other test for four DINUCs.
-
 # INPUT smp: either file name or read-in data.frame for single sample. (When reg is specified, smp must be preprocessed to contain counts for the corresponding region.)
+# INPUT smpnames: sample label associated with Count file smp.
 # INPUT gn: string for genome: hg38,hg19,saccer3
+# INPUT libSizeNorm: designate whether to apply the TMM-derived normalization factors (pre-saved on disk after multiQC.Rmd). Default to False.
 # INPUT reg: specifying the single region.
 ### choice 1 can be a keyword {'intron','exon','promoter'} etc.
 ### choice 2 can be a underscore-separated vector of four big integers (or proportions), freshly counted from corresponding CUSTOM region from refGenome.
 # INPUT cnt5file='gn_reg_cnt5.tsv': one data file pre-storing count vectors for common regions of a few genomes we accommodate.
 # OUTPUT res$res: 5x6 test result table in character matrix.
 # OUTPUT res$unit: inform on the unit of sample counts used in statistical tests & presentation.
-singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.tsv0',nDigit=4,unit2=c(1e6,1e3)) { #nDigit: number of significant digits.
+singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.tsv0',libSizeNorm=F,smpnames=NULL,nDigit=4,unit2=c(1e6,1e3)) { #nDigit: number of significant digits.
 	if (!require(reshape2)) stop('Please install library reshape2 for dcast function')
 	gn <- tolower(gn)
 	DINUC4 <- c('TT','TC','CC','CT')
@@ -54,7 +56,7 @@ singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.ts
 		if (!grepl(',',smp)) {
 			smpCnt <- collapse.cntFile(smp,cntType,chrs=NULL)
 		} else {
-			smpCnt <- collapseGrp2Smp(smp)
+			smpCnt <- collapseGrp2Smp(smp,libSizeNorm,smpnames)
 		}
 		if (!is.null(unit2)) {
 			res <- convert.cntUnit(smpCnt,unit2)
@@ -95,18 +97,21 @@ singleSample <- function(smp,gn,reg=NULL,cntType='rCnt',cnt5file='gn_reg_cnt5.ts
 # twoReg(): Compare dinuc counts between two region sets in a single sample while taking into account reference dinuc distribution of the two regions in refGenome.
 # INPUT smp1: filename for region1-limited sample cnt file.
 # INPUT smp2: filename for region2-limited sample cnt file.
+# INPUT smp1names: sample labels associated with Count files smp1.
+# INPUT smp2names: sample labels associated with Count files smp2.
 # INPUT reg1 & reg2: to inform reference p5 vector. A region keyword or a count5 string (comma-separated).
+# INPUT libSizeNorm: designate whether to apply the TMM-derived normalization factors (pre-saved on disk after multiQC.Rmd). Default to False.
 # NOTE smp1 & smp2: when supplied as multi-samples, smp1 & smp2 should be two groups of equal lengths. Haven't enforced such a pre-check, but it should be kept in mind.
-twoReg <- function(smp1,smp2,reg1,reg2,gn,cntType='rCnt',cnt5file='gn_reg_cnt5.tsv',nDigit=4,unit2=c(1e6,1e3),DINUC4=c('TT','TC','CC','CT')) {
+twoReg <- function(smp1,smp2,reg1,reg2,gn,cntType='rCnt',cnt5file='gn_reg_cnt5.tsv',libSizeNorm=F,smp1names=NULL,smp2names=NULL,nDigit=4,unit2=c(1e6,1e3),DINUC4=c('TT','TC','CC','CT')) {
 	if (!grepl(',',smp1)) {
 		smpCnt1 <- collapse.cntFile(smp1,cntType,chrs=NULL)
 	} else {
-		smpCnt1 <- collapseGrp2Smp(smp1)
+		smpCnt1 <- collapseGrp2Smp(smp1,libSizeNorm,smp1names)
 	}
 	if (!grepl(',',smp2)) {
 		smpCnt2 <- collapse.cntFile(smp2,cntType,chrs=NULL)
 	} else {
-		smpCnt2 <- collapseGrp2Smp(smp2)
+		smpCnt2 <- collapseGrp2Smp(smp2,libSizeNorm,smp2names)
 	}
 	if (!is.null(unit2)) {
 		res <- convert.cntUnit(rbind(smpCnt1,smpCnt2),unit2)
@@ -147,20 +152,23 @@ twoReg <- function(smp1,smp2,reg1,reg2,gn,cntType='rCnt',cnt5file='gn_reg_cnt5.t
 # twoGrp(): Given two sample file names (.cnt), return 5*7 statistical test result table.
 # INPUT smp1: either file name or read-in data.frame for sample 1.
 # INPUT smp2: either file name or read-in data.frame for sample 2.
+# INPUT smp1names: sample labels associated with Count file smp1.
+# INPUT smp2names: sample labels associated with Count file smp2.
+# INPUT libSizeNorm: designate whether to apply the TMM-derived normalization factors (pre-saved on disk after multiQC.Rmd). Default to False.
 # OUTPUT res$res: 5x7 test result table.
 ### Five rows (DINUC4+Overall), 7 columns (exp,obs,p.exact,p.exact.adj,p.chisq,p.chisq.adj,1stVS2nd)
 # NOTE only chisquared test is employed for both overall and one-vs-others.
 # NOTE number of digits printed out in kable is adjustable via nDigit
-twoGrp <- function(smp1,smp2,cntType='rCnt',nDigit=4,DINUC4=c('TT','TC','CC','CT'),unit2=c(1e6,1e3)) {
+twoGrp <- function(smp1,smp2,cntType='rCnt',libSizeNorm=F,smp1names=NULL,smp2names=NULL,nDigit=4,DINUC4=c('TT','TC','CC','CT'),unit2=c(1e6,1e3)) {
 	if (!grepl(',',smp1)) {
 		smpCnt1 <- collapse.cntFile(smp1,cntType,chrs=NULL)
 	} else {
-		smpCnt1 <- collapseGrp2Smp(smp1)
+		smpCnt1 <- collapseGrp2Smp(smp1,libSizeNorm,smp1names)
 	}
 	if (!grepl(',',smp2)) {
 		smpCnt2 <- collapse.cntFile(smp2,cntType,chrs=NULL)
 	} else {
-		smpCnt2 <- collapseGrp2Smp(smp2)
+		smpCnt2 <- collapseGrp2Smp(smp2,libSizeNorm,smp2names)
 	}
 	if (!is.null(unit2)) {
 		res <- convert.cntUnit(rbind(smpCnt1,smpCnt2),unit2)
@@ -309,9 +317,12 @@ sumPbyFisher <- function(pvals,min.th=1e-147) {
 
 # collapseGrp2Smp(): when sample CNT file name implies multiple files are supplied, flattenGrp2Smp() is invoked to collapse a group to a sample.
 # NOTE: collapseGrp2Smp() calls on collapse.cntFile() to yield sample-wise 5-tuple count vectors, and then sum up counts by dinuc type.
+# NOTE: when libSizeNorm is TRUE, the function looks for file normFactors.txt where normalization factors are tagged with sample labels.
 # INPUT grp: a comma separated string, implying multiple CNT files.
+# INPUT libSizeNorm: designate whether to apply the TMM-derived normalization factors (pre-saved on disk after multiQC.Rmd). Default to False.
+# smpNames: comma-separated sample names in accordance with file names given by input grp. 
 # OUTPUT CNT5: a 5-tuple of counts, named DINUC4 + others.
-collapseGrp2Smp <- function(grp) {
+collapseGrp2Smp <- function(grp,libSizeNorm=F,smpNames=NULL) {
 	samples <- unlist(strsplit(grp,','))
 	cnt.samples <- matrix(nr=length(samples),nc=5)
 	for (i in 1:length(samples)) {
@@ -319,7 +330,16 @@ collapseGrp2Smp <- function(grp) {
 		cnt5 <- collapse.cntFile(sample)
 		cnt.samples[i,] <- cnt5
 	}
-	CNT5 <- apply(cnt.samples,2,function(x) sum(x,na.rm=T))
+	# Apply library size normalization with TMM factors
+	if (!libSizeNorm | file.exists('normFactors.txt')) {
+    normFac0 <- read.delim('normFactors.txt',as.is=T)
+		normFac <- normFac0[,2]
+		names(normFac) <- normFac0[,1]
+    smpNames <- unlist(strsplit(smpNames,','))
+    normFac <- normFac[smpNames]
+    cnt.samples <- cnt.samples*normFac
+	}
+  CNT5 <- apply(cnt.samples,2,function(x) sum(x,na.rm=T))
 	names(CNT5) <- names(cnt5)
 	CNT5
 }
@@ -347,7 +367,6 @@ convert.cntUnit <- function(cnt0,unit2=c(1e6,1e3)) {
 ############################ QC functions below ################################################
 ################################################################################################
 
-# UPDATE 8/4/2020: Per Ref. 1's suggestion, normalize away genome dinucleotide composition.
 ### Divide raw efficiency by genome composition proportion.
 ### Add one more argument: gn
 # efficiency(): Calculate efficiency of a single sample (CNT file).
@@ -364,8 +383,8 @@ efficiency <- function(smp,cntType=c('rCnt','sCnt')[1],gn='hg38',nDigit=3) {
 	}
 	dinuc4 <- sum(cnt5[DINUC4],na.rm=T)
 	eff <- sum(dinuc4,na.rm=T)/sum(cnt5,na.rm=T)
-	eff0 <- sum(dinuc4p[[gn]]) # UPDATE: baseline proportion of DINUC4 in genome
-	eff <- eff/eff0 # UPDATE: now efficiency becomes a ratio or raw efficiency over background proportion.
+	eff0 <- sum(dinuc4p[[gn]])
+	eff <- eff/eff0
 	eff <- signif(eff,nDigit)
 	eff 
 }
@@ -435,13 +454,8 @@ bed2cnt <- function(bed,cntType=c('rCnt','sCnt')[1],chrs=NULL) {
 	cnt <- cnt[dinuc16]
 	cnt
 }
-#smp <- commandArgs(T)
-#symRes <- symmetry('case1.bgz')
-#bed <- symRes$bed
-#sym7 <- symRes$sym7
 
 # plot_EfforCont(): Plot left-and-right two panels for Eff & Cont, respectively.
-# UPDATE 8/5/2020: removed default value for EffRange.rCnt, EffRange.sCnt, ContRange.rCnt, and ContRange.sCnt.
 plot_EffCont <- function(eff2,cont2,sample='Sample',EffRange.rCnt,EffRange.sCnt,ContRange.rCnt,ContRange.sCnt) {
 	names(eff2) <- names(cont2) <- c('by_ReadCount','by_SiteCount')
 	layout(matrix(1:2,nr=1))
@@ -453,7 +467,6 @@ plot_EffCont <- function(eff2,cont2,sample='Sample',EffRange.rCnt,EffRange.sCnt,
 # INPUT indexVal: two values of the index, named c('by_ReadCount','by_SiteCount')
 # INPUT range.rCnt (byReadCount) of Efficiency out of 10/5 human/yeast samples: c(2.06,2.91) or c(1.44,2.36)
 # INPUT range.rCnt (byReadCount) of Contrast out of 10/5 human/yeast samples: c(7.7,23.8) 
-# UPDATE 8/5/2020: changed xlim() of Efficiency from (0,1) to (0,5)
 plot_DotByStem <- function(indexVal,range.rCnt=c(0.576,0.813),range.sCnt=c(0.576,0.813), sample='Sample',index='Efficiency') {
 	par(mar=c(6,8,4,2),cex.main=1.5,cex.axis=1.5,cex.lab=1.5,bty='l')#mar=c(6,8,4,2),
 	xInterval <- switch(index,
@@ -466,7 +479,6 @@ plot_DotByStem <- function(indexVal,range.rCnt=c(0.576,0.813),range.sCnt=c(0.576
 	)
 		plot(xInterval,c(0,3),type='n',xlab=index,ylab='',main=sample,axes=F)
 	axis(side=1)
-	#axis(side=2,at=c(0:3),labels=c('',rev(names(indexVal)),''),las=1)
 	text(cex=1.5, x=x.offset, y=c(1,2)-0.25, rev(names(indexVal)), xpd=TRUE, srt=45)
 	lines(range.rCnt,c(2,2),lwd=4) # Set by_ReadCount higher, at y=2
 	points(indexVal[1],2,pch=19,col='red',cex=2)
@@ -484,8 +496,6 @@ plot_sym7 <- function(sym7,sample='') {
 }
 
 # plot_rcDistrib(): Take the bed data frame as primary input, plot a groupped barplot for three levels of readCounts.
-# UPDATE 8/6/2020 to implement percentage plot via rcSitePctg().
-# UPDATE 8/6/2020 
 # INPUT bed0: secondary output of symmetry().
 # INPUT gn: genome (species) of the CPD sample.
 # INPUT pts: default to c(0,5,10) points where frequency of higher readCounts is visualized. 
@@ -500,11 +510,10 @@ plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
   dinucs <- bed[,4]
   rc <- bed[,5]
   RC4 <- split(rc,factor(dinucs))[DINUC4]
-	#Freq <- matrix(nr=length(DINUC4)+1,nc=length(pts),dimnames=list(c(DINUC4,'All'),paste('Reads',pts,sep='>')))
 	Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
 	Freq.all <- exceedingCnt(rc0,pts)	
 	colnames(Freq) <- paste('Reads',pts,sep='>')
-	pctg.all <- rcSitePctg(bed0,gn,pts) # UPDATE 8/6/2020
+	pctg.all <- signif(rcSitePctg(bed0,gn,pts)*100,3) # use unit %
   layout(matrix(1:2,nr=1))	
 	par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5)
 	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
@@ -513,10 +522,8 @@ plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
 	barplot(pctg.all[-nrow(pctg.all),],beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
 		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
 	mtext(side=2,line=5,text='Percentage',cex=2)
-  #tiff(paste0('rcDistrib_truncate',truncate,'.tif'),width=2048,height=1600)
-  #dev.off()
   freqTbl <- rbind(Freq,All=Freq.all)
-	colnames(pctg.all) <- paste(colnames(freqTbl),'(percentage)')
+	colnames(pctg.all) <- paste(colnames(freqTbl),'(%)')
 	colnames(freqTbl) <- paste(colnames(freqTbl),'(frequency)')
 	freqPctgTbl <- cbind(freqTbl,pctg.all)
 	freqPctgTbl 
@@ -539,6 +546,7 @@ rcSitePctg <- function(bed0,gn='hg38',pts=c(0,5,10)) { # Read Count Sites Percen
   Freq.all <- exceedingCnt(rc,pts)
 	pctg.all <- Freq.all/(2*gnNucs[gn])
 	pctgCols <- rbind(pctg,All=pctg.all)
+	colnames(pctgCols) <- paste('Reads',pts,sep='>')
 	pctgCols # percentage columns
 }
 # exceedingCnt(): How many values of rc exceed (>) the specified value of pt? 
@@ -549,32 +557,49 @@ exceedingCnt <- function(rc,pt) {
 	freq
 }
 # plotM_rcDistrib(): Given a list of bgz bed data frames, plot barplots of readCounts for multiple samples, at given cut-off points.
-# UPDATE 8/6/2020 to render one additional rcSite (percentage) plot.
-# INPUT bedS: a list of K components, corresponding to K samples in a batch.
+# INPUT bedS0: a list of K components, corresponding to K samples in a batch.
 # dinuc takes value from {'TT','TC','CC','CT'} or any combination
 # OUTPUT: K by 6 percentage table; K is number of samples and 6 columns are for three frequency vals and three percentage vals. 
-plotM_rcDistrib <- function(bedS,exp='Experiment',gn='hg38',dinuc=c('TT','TC','CC','CT'),pts=c(0,5,10)) {
-	#K <- length(bedS)
-	pctgs <- t(sapply(bedS,rcSitePctg2one,gn,dinuc,pts))
-	bedS <- lapply(bedS,function(x,scope) x[x[,4]%in%scope,],dinuc)
+plotM_rcDistrib <- function(bedS0,exp='Experiment',gn='hg38',dinuc=c('TT','TC','CC','CT'),pts=c(0,5,10)) {
+	#pctgs <- t(sapply(bedS,rcSitePctg2one,gn,dinuc,pts))
+	bedS <- lapply(bedS0,function(x,scope) x[x[,4]%in%scope,],dinuc)
 	rcS <- lapply(bedS,function(x) x[,5])	
-	Freq <- sapply(rcS,exceedingCnt,pts) # count matrix: pts by sample
-	Freq <- t(Freq) # transpose to sample by pts
-	colnames(pctgs) <- colnames(Freq) <- paste('Reads',pts,sep='>')
-	Freq1 <- Freq[order(-Freq[,1]),]
 	layout(matrix(1:2,nr=1))
+	FreqReads <- freqBarplot_on_pts(rcS,pts,'Reads')
+	normFac <- libSizeNormFac(bedS0)
+	cpmNormed <- vector('list',length(bedS0))
+	names(cpmNormed) <- names(bedS0)
+	rawLibSize <- sapply(bedS0,function(x) sum(x[,5]))
+	for (i in 1:length(bedS0)) {
+		cpmNormed[[i]] <- ceiling(rcS[[i]]*1000000/(rawLibSize[i]*normFac[i]))
+	}
+	cpm_pts <- floor(pts/2)
+	max_per_sample <- sapply(cpmNormed,max)
+	if (min(max_per_sample)<=max(cpm_pts)) {
+		pts3 <- (min(max_per_sample)-1)
+		pts2 <- floor(pts3/2)
+		cpm_pts <- c(0,pts2,pts3)
+	}
+	
+	FreqCPM <- freqBarplot_on_pts(cpmNormed,cpm_pts,'CPM')		
+  tbl <- cbind(FreqReads,FreqCPM)
+	list(tbl=tbl,normFac=normFac)
+}
+# freqBarplot_on_pts(): to draw groupped barplot of frequency of read count values surpassing certain cutoff values.
+# INPUT rcS: a list of read count vectors which might have variable lengths.
+# INPUT pts: (three) cutoff values for reads or CPM. e.g., c(0,5,10) for read count.
+# OUTPUT Freq: nGroup by n_pts matrix, values for bar heights.
+freqBarplot_on_pts <- function(rcS,pts,prefix='Reads') {
+  Freq <- sapply(rcS,exceedingCnt,pts) # count matrix: pts by sample
+  Freq <- t(Freq) # transpose to sample by pts
+	colnames(Freq) <- paste(prefix,pts,sep='>')
+  Freq1 <- Freq[order(-Freq[,1]),]
+	colnames(Freq) <- paste(prefix,pts,sep='>')
   par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5) #mar=c(6,8,6,2),
   barplot(Freq1,beside=T,log='y',las=1,main=paste(exp,'\nCPD-forming dinuceotides'),legend.text=T,
     args.legend=list(x='topright',bty='n',pt.cex=1.2))
   mtext(side=2,line=5,text='Frequency',cex=2)
-	pctgs1 <- pctgs[order(-pctgs[,1]),]
-  barplot(pctgs1,beside=T,log='y',las=1,main=paste(exp,'\nCPD-forming dinuceotides'),legend.text=T,
-    args.legend=list(x='topright',bty='n',pt.cex=1.2))
-  mtext(side=2,line=5,text='Percentage',cex=2)
-  colnames(pctgs) <- paste(colnames(Freq),'(percentage)')
-  colnames(Freq) <- paste(colnames(Freq),'(frequency)')
-  freqPctgTbl <- cbind(Freq,pctgs)
-	freqPctgTbl
+	Freq
 }
 # rcSitePctg2one(): Collapse multiple rows of percentages for TT, TC, CC, and CT to one row based on weighted sum of dinuc combinations.
 # NOTE: Refers to dinuc4p[[gn]]
@@ -624,4 +649,36 @@ plot_particles <- function(indexVal,index='Efficiency',indexRange=c(0.576,0.813)
 	text(median(indexVal),-0.4,'reference',cex=1.2,col='gray')
 	axis(side=1)#,at=seq(from=min(indexVal),to=max(indexVal),len=5))
 	axis(side=2,at=1:K,labels=names(indexVal),las=1)
+}
+# libSizeNormFac(): employ Trimmed-Mean of M-values (TMM) to obtain normalization factors to adjust library size.
+# INPUT bedS: a list of data frames with content read from inucleotide BED files included in one project.
+# INPUT unionTag: logic, indicating to use union tags or intersection tags across samples. Defaults to intersection.
+# OUTPUT normFac: a vector of scalars, one value for each CPD-Seq sample. The reference sample should have a value of 1.
+libSizeNormFac <- function(bedS,unionTag=F) {
+  if (!require(edgeR)) stop('Please install library edgeR for calcNormFactors function')
+  if (is.null(names(bedS))) names(bedS) <- paste0('Sample',1:length(bedS))
+	for (i in 1:length(bedS)) {
+		rownames(bedS[[i]]) <- paste(bedS[[i]][,1],bedS[[i]][,2],bedS[[i]][,6],bedS[[i]][,4],sep='_') #Identify each entity by combining chromosome, start_pos, strand; dinucleotide type is included to enable later restriction to certain types.
+		if (i==1) {
+			tags <- rownames(bedS[[i]])
+		} else {
+			if (unionTag) {
+				tags <- union(tags,rownames(bedS[[i]]))
+			} else {
+				tags <- intersect(tags,rownames(bedS[[i]]))
+			}
+		}
+	}
+	bedCM <- matrix(0,nr=length(tags),nc=length(bedS),dimnames=list(tags,names(bedS))) 
+	for (i in 1:length(bedS)) {
+		bedCM[intersect(rownames(bedS[[i]]),tags),i] <- bedS[[i]][intersect(rownames(bedS[[i]]),tags),5]
+	}
+	if (length(tags)>=100) {
+		normFac <- calcNormFactors(bedCM,method='TMM',refColumn=1)
+	} else {
+		warning('Tags matched across multiple samples totalled to below 100. Use dummy normalization factors of all ones.')
+		normFac <- rep(1,length(tags))
+		names(normFac) <- names(bedS)
+	}
+	normFac
 }
