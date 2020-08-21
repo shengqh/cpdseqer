@@ -1,0 +1,117 @@
+---
+title: "CPDseqer Quality Control Report"
+date: "`r format(Sys.time())`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 1
+    number_sections: true
+---
+<style type="text/css">
+.main-container {
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+---
+
+```{r setup, include=FALSE}
+option_file="QC.options.txt"
+knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
+library(knitr) # kable
+library(reshape2) # dcast
+source('Rfunctions.R')
+```
+```{r stat, echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+opts <- read.delim(option_file,head=F,as.is=T)
+optAssignments <- paste0(opts[,1],'=\'',opts[,2],'\'')
+sample <- 'Some Sample'
+cntType <- 'rCnt'
+gn <- 'hg38'
+nDigit <- 3
+attach(QCrefRange[[gn]])
+for (assignment in optAssignments) {
+  eval(parse(text=assignment))
+}
+if (!exists('bgz') | !exists('cnt')) {
+	stop('Two primary input: BGZ & CNT files are not specified!')
+} else {
+	feedback=paste0('**Genome**: *',gn,'*; **BGZ**: *',bgz,'*; **CNT**: *',cnt,'*; **cntType**: *',cntType,'*')
+	feedback <- gsub('rCnt','ReadCount',feedback)
+	feedback <- gsub('sCnt','SiteCount',feedback)
+	eff.r <- efficiency(cnt,'rCnt',gn)
+	eff.s <- efficiency(cnt,'sCnt',gn)
+	cont.r <- contrast(cnt,'rCnt')
+	cont.s <- contrast(cnt,'sCnt')
+	eff2 <- c(eff.r,eff.s)
+	cont2 <- c(cont.r,cont.s)
+	# NOTE: EffR.r, EffR.s, ContR.r, ContR.s have been defined in Rfunctions.R
+	EffR.range <- paste0('(',signif(EffR.r[1],3),',',signif(EffR.r[2],3),')') # reference Range of Efficiency (rCnt)
+  EffS.range <- paste0('(',signif(EffR.s[1],3),',',signif(EffR.s[2],3),')') # reference Range of Efficiency (sCnt)
+	ContR.range <- paste0('(',signif(ContR.r[1],3),',',signif(ContR.r[2],3),')') # reference Range of Contrast (rCnt)
+	ContS.range <- paste0('(',signif(ContR.s[1],3),',',signif(ContR.s[2],3),')') # reference Range of Contrast (sCnt)
+	symRes <- symmetry(bgz,cntType)
+	bed <- symRes$bed
+	sym7 <- symRes$sym7
+}
+
+```
+# Parameters for `r sample`
+
+<font size="3"> `r feedback`</font>
+
+# QC figures
+<font size="4">
+__Efficiency&Contrast__
+
+__CPD-forming dinucleotides__
+
+__Forward/Reverse Strand Symmetry__
+
+</font>
+```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+#layout(matrix(1:3,nr=1))
+plot_EffCont(eff2,cont2,sample,EffR.r,EffR.s,ContR.r,ContR.s)
+rcDistrib.tbl <- plot_rcDistrib(bed,sample,pts=c(0,5,10))
+cat('\n\n')
+plot_sym7(sym7,sample)
+```
+
+```{r tablePrepare,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+# Eff&Cont (2) tables
+Eff.tbl <- cbind(round(eff2,nDigit),c(EffR.range,EffS.range))
+rownames(Eff.tbl) <- c('by_ReadCount','by_SiteCount')
+colnames(Eff.tbl) <- c(paste(sample,'Efficiency'),'Reference range')
+Cont.tbl <- cbind(round(cont2,nDigit),c(ContR.range,ContS.range))
+rownames(Cont.tbl) <- c('by_ReadCount','by_SiteCount')
+colnames(Cont.tbl) <- c(paste(sample,'Contrast'),'Reference range')
+# Symmetry Table
+sym7.ratio <- round(t(sym7)/colSums(sym7),nDigit)
+sym7.ratio.str <- paste(sym7.ratio[,1],sym7.ratio[,2],sep=':')
+Sym.tbl <- cbind(t(sym7),sym7.ratio.str)
+colnames(Sym.tbl) <- c('Forward (+)','Reverse (-)','Ratio') 
+detach(QCrefRange[[gn]])
+```
+# QC tables
+
+## Efficiency&Contrast
+
+```{r tableEff,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+kable(Eff.tbl)
+cat('\n')
+kable(Cont.tbl)
+```
+
+## CPD-forming dinucleotides
+
+```{r tableRcDistrib,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+kable(rcDistrib.tbl)
+```
+
+## Forward/Reverse Strand Symmetry
+
+```{r tableSym7,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
+kable(Sym.tbl)
+```
+
