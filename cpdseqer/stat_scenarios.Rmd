@@ -27,33 +27,37 @@ source('Rfunctions.R')
 ```{r stat, echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 opts <- read.delim(option_file,head=F,as.is=T) 
 optAssignments <- paste0(opts[,1],'=\'',opts[,2],'\'')
+logic.ix <- which(opts[,2]%in%c('T','F'))
+if (length(logic.ix)>0)
+	optAssignments[logic.ix] <- paste0(opts[logic.ix,1],'=',opts[logic.ix,2]) # =T or =F
 gn='hg38'
 reg <- NULL
 reg1 <- 'intron'
 reg2 <- 'exon'
 cnt5file <- 'gn_reg_cnt5.tsv'
 cntType <- 'rCnt'
+libSizeNorm <- F
 for (assignment in optAssignments) {
 	eval(parse(text=assignment))
 }
 
 #scenario='Statistical Comparison'
 if (exists('scenario')) { # Triage based on variable sceCmmd: {stat_sce1,stat_sce2,stat_sce3}
-	if (scenario=='sce1') { # NOTE: later sceCmmd can drop suffix .R
+	if (scenario=='sce1') {
 		scenario='Compare one sample with reference genome'
     if (!exists('smp')) stop('Scenario 1 (comparing one sample against reference) requires one sample\'s CNT file!')
-		feedback=paste(c('**Sample** **CNT**: *',smp,'*; **Genome**: *',gn,'*; **CountType**: *',cntType,'*; **Region**: *',reg,'*'),collapse='')
-		res0 <- singleSample(smp,gn,reg,cntType=cntType,cnt5file=cnt5file,nDigit=3)	
+		feedback=paste(c('**Sample**: *',smpnames,'*; **libSize_normalization**: *',libSizeNorm,'*; **Genome**: *',gn,'*; **CountType**: *',cntType,'*; **Region**: *',reg,'*'),collapse='')
+		res0 <- singleSample(smp,gn,reg,libSizeNorm=libSizeNorm,smpnames=smpnames,cntType=cntType,cnt5file=cnt5file,nDigit=3)	
 	} else if (scenario=='sce2') {
 		scenario='Compare two regions in a sample'
 		if (!exists('smp1')|!exists('smp2')) stop('Scenario 2 (comparing two regions) requires two regions\' CNT files!')
-		feedback=paste(c('**Region1_CNT**: *',smp1,'*; **Region2_CNT**: *',smp2,'*; **Genome**: *',gn,'*; **CountType**: *',cntType,'*; **Region1_reference**: *',reg1,'*; **Region2_reference**: *',reg2,'*'),collapse='')
-		res0 <- twoReg(smp1,smp2,reg1,reg2,gn,cntType=cntType,cnt5file=cnt5file)
+		feedback=paste(c('**Region1_CNT**: *',smp1,'*; **Region2_CNT**: *',smp2,'*; **libSize_normalization**: *',libSizeNorm,'*; **Genome**: *',gn,'*; **CountType**: *',cntType,'*; **Region1_reference**: *',reg1,'*; **Region2_reference**: *',reg2,'*'),collapse='')
+		res0 <- twoReg(smp1,smp2,reg1,reg2,gn,libSizeNorm=libSizeNorm,smp1names=smp1names,smp2names=smp2names,cntType=cntType,cnt5file=cnt5file)
 	} else if (scenario=='sce3') {
     scenario='Compare two samples'
     if (!exists('smp1')|!exists('smp2')) stop('Scenario 3 (comparing two samples) requires two samples\' CNT files!')
-		feedback=paste(c('**Sample1_CNT**: *',smp1,'*; **Sample2_CNT**: *',smp2,'*; **CountType**: *',cntType,'*'),collapse='')
-		res0 <- twoGrp(smp1,smp2,cntType=cntType)
+		feedback=paste(c('**Sample1**: *',smp1names,'*; **Sample2**: *',smp2names,'*; **libSize_normalization**: *',libSizeNorm,'*; **CountType**: *',cntType,'*'),collapse='')
+		res0 <- twoGrp(smp1,smp2,cntType=cntType,libSizeNorm=libSizeNorm,smp1names=smp1names,smp2names=smp2names)
 	}
 	feedback <- gsub('rCnt','ReadCount',feedback)
 	feedback <- gsub('sCnt','SiteCount',feedback)

@@ -64,7 +64,7 @@ if (!exists('smps')) {
 		conts[sample] <- contrast(counts[sample],cntType)
 		symRes <- symmetry(bgzs[sample],cntType)
 		bed <- symRes$bed
-		bedS[[sample]] <- bed[bed[,4]%in%dinuc,]
+		bedS[[sample]] <- bed #bed[bed[,4]%in%dinuc,] # UPDATE 8/19/20
 		sym <- symRes$sym7[,dinuc]
 		syms[sample] <- signif(sym[1]/sym[2],nDigit)
 	}
@@ -88,7 +88,8 @@ __Read Count Distribution__
 ```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 plotM_EffCont(effs,conts,effRange,contRange,exp)
 knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
-Freq <- plotM_rcDistrib(bedS,exp,gn,dinuc,pts=c(0,5,10)) # UPDATE 8/6/20 with added gn argument
+plotM_rcDistrib.res <- plotM_rcDistrib(bedS,exp,gn,dinuc,pts=c(0,5,10)) # UPDATE 8/6/20 with added gn argument
+write.table(plotM_rcDistrib.res$normFac,'normFactors.txt',quote=F,sep='\t',col.names=F)
 detach(QCrefRange[[gn]])
 ```
 
@@ -103,5 +104,5 @@ kable(tbl3indices)
 ## Read Count Distribution
 
 ```{r tableRcDistrib,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
-kable(Freq)
+kable(plotM_rcDistrib.res$tbl)
 ```
