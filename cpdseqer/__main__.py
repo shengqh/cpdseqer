@@ -16,6 +16,7 @@ from .fig_position_utils import fig_position
 from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region, uv_comp_regions, uv_comp_groups, uv_comp_groups_region
 from .qc_utils import qc
 from .filter_utils import filter
+from .fasta2dinucleotide_utils import fasta2dinucleotide
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
@@ -67,6 +68,12 @@ def main():
   parser_p.add_argument('-m', '--min_coverage', type=int, default=1, help='The minimum coverage of dinucleotide for counting (default 1)')
   parser_p.add_argument('-u', '--unique_only', action='store_true', help='Use uniquely mapped read only')
   parser_p.add_argument('-t', '--test', action='store_true', help='Test the first 1000000 reads only')
+  parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
+  # create the parser for the "fasta2dinucleotide" command
+  parser_p = subparsers.add_parser('fasta2dinucleotide', help='Extract dinucleotide from fasta file')
+  parser_p.add_argument('-i', '--input', action='store', nargs='?', help='Input fasta file', required=NOT_DEBUG)
+  parser_p.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file', required=NOT_DEBUG)
   parser_p.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   # create the parser for the "filter" command
@@ -184,6 +191,9 @@ def main():
   elif args.command == "bam2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
     bam2dinucleotide(logger, args.input, args.output, args.fasta, args.mapping_quality, args.unique_only, args.min_coverage, args.test)
+  elif args.command == "fasta2dinucleotide":
+    logger = initialize_logger(args.output + ".log", args)
+    fasta2dinucleotide(logger, args.input, args.coordinate_file, args.output)
   elif args.command == "filter":
     logger = initialize_logger(args.output + ".log", args)
     filter(logger, args.input, args.coordinate_file, args.output, args.method)    
