@@ -4,6 +4,8 @@ import logging
 import errno
 import shutil
 import hashlib
+import gzip
+from collections import OrderedDict
 from shutil import which
 
 MUT_LEVELS=['TT','TC','CC','CT']
@@ -35,7 +37,7 @@ def runCmd(cmd, logger):
 def readFileMap(fileName):
   check_file_exists(fileName)
 
-  result = {}
+  result = OrderedDict()
   with open(fileName) as fh:
     for line in fh:
       filepath, name = line.strip().split('\t', 1)
@@ -75,18 +77,51 @@ def initialize_logger(logfile, args):
  
   return(logger)
 
-def read_coordinate_file(fileName, defCatName, delimit='\t', addChr=False, categoryIndex=-1):
+def read_coordinate_file(fileName, defCatName, delimit='\t', addChr=False, categoryIndex=-1, checkOverlap=False):
   #print("delimit=tab" if delimit=='\t' else "delimit=space")
   result = []
-  with open(fileName, "rt") as fin:
+  if fileName.endswith(".gz"):
+    fin = gzip.open(fileName, "rt")
+  else:
+    fin = open(fileName, "rt")
+    
+  bFirst = True
+  with fin:
     for line in fin:
       parts = line.rstrip().split(delimit)
+      if len(parts) < 3:
+        if bFirst:
+          if delimit == '\t':
+            delimit = ' '
+          else:
+            delimit = '\t'
+          parts = line.rstrip().split(delimit)
+          if len(parts) < 3:
+            raise Exception("I don't know how to interpret bed file line: %s" % line)
+          
       #print(parts)
       chrom = "chr" + parts[0] if addChr else parts[0] 
       catName = parts[categoryIndex] if (categoryIndex != -1 and categoryIndex < len(parts)) else defCatName
+      strand = parts[5] if len(parts) >= 6 else '+'
       #print(catName)
-      result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), catName))
-      
+      result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), catName, strand))
+
+  if checkOverlap:
+    chrRegionMap = OrderedDict()
+    for ci in result:
+      chrRegionMap.setdefault(ci.reference_name, []).append(ci)
+    result = []
+    for ciList in chrRegionMap.values():
+      ciList.sort(key=get_reference_start)
+      for ciIndex in range(len(ciList)-1, 0, -1):
+        if ciList[ciIndex].reference_start < ciList[ciIndex-1].reference_end:
+          print("Overlap detected : %s : %d-%d %d-%d" % (ciList[ciIndex].reference_name, ciList[ciIndex].reference_start, ciList[ciIndex].reference_end, ciList[ciIndex-1].reference_start, ciList[ciIndex-1].reference_end))
+          ciList[ciIndex].reference_start = ciList[ciIndex-1].reference_end
+          if ciList[ciIndex].reference_start >= ciList[ciIndex].reference_end:
+            del ciList[ciIndex]
+            continue
+      result.extend(ciList)
+
   return(result)
 
 def write_r_script(outfilePrefix, rScript, optionMap={}):
