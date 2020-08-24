@@ -1,9 +1,10 @@
 class CategoryItem:
-  def __init__(self, reference_name, reference_start, reference_end, category ):
+  def __init__(self, reference_name, reference_start, reference_end, category, strand='+' ):
     self.reference_name = reference_name
     self.reference_start = reference_start
     self.reference_end = reference_end
     self.category = category
+    self.strand = strand
     self.dinucleotide_count_map = {}
     
   def overlap (self, position):
