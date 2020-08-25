@@ -22,6 +22,12 @@ Install Samtools in Ubuntu with the following command:
 sudo apt-get install -y samtools
 ```
 
+Install bedtools in Ubuntu with the following command:
+
+```
+sudo apt-get install -y bedtools
+```
+
 Install Python 3.7 in Ubuntu. Most factory versions of Ubuntu18.04 and later come with python pre-installed.  To check if Python is installed and the Python version, use the following command: 
 
 ```
@@ -41,7 +47,12 @@ sudo apt install python3.7
 Install R packages in R
 
 ```
-install.packages(c("knitr","rmarkdown"))
+install.packages(c("knitr","rmarkdown", "data.table"))
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("edgeR")
 ```
 
 # Installation
