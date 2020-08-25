@@ -17,6 +17,7 @@ from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region, uv_comp_region
 from .qc_utils import qc
 from .filter_utils import filter
 from .fasta2dinucleotide_utils import fasta2dinucleotide
+from .size_factor_utils import size_factor
 
 # CPD-seq data analysis
 # CPD-seq sequencing reads were trimmed of barcode sequences and the 3' nucleotide of the sequencing read, 
@@ -130,6 +131,12 @@ def main():
   parser_f.add_argument('-t', '--test', action='store_true', help='Test the first 10000 coordinates only')
   parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
+  # create the parser for the "size_factor" command
+  parser_f = subparsers.add_parser('size_factor', help='Calculate size factor for multiple dinucleotide files')
+  parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
+  parser_f.add_argument('--calc_type', action='store', nargs='?', choices=list(["site_intersect", "site_union", "chrom_dinucleotide"]), default="site_intersect", help='Calculate size factor for normalization')
+  parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
   parser_u.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_u.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
@@ -206,6 +213,9 @@ def main():
   elif args.command == "report":
     logger = initialize_logger(args.output + ".log", args)
     report(logger, args.input, args.group, args.output, args.block, args.db)
+  elif args.command == "size_factor":
+    logger = initialize_logger(args.output + ".log", args)
+    size_factor(logger, args.input, args.output, args.calc_type)
   elif args.command == "fig_genome":
     logger = initialize_logger(args.output + ".log", args)
     fig_genome(logger, args.input, args.output, args.block, args.db, args.norm_type)
