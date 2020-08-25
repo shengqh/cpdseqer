@@ -117,8 +117,8 @@ class SizeFactorChromDinucleotide(AbstractSizeFactor):
         parts = line.rstrip().split('\t')
 
         #ignore the mutated dinu
-        if parts[1] in MUT_LEVELS:
-          continue
+        #if parts[1] in MUT_LEVELS:
+        #  continue
 
         #ignore the chromomsome contigs
         if len(parts[0]) > 4:
