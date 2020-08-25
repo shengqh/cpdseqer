@@ -19,8 +19,8 @@ def fasta2dinucleotide(logger, fasta_file, bed_file, output_prefix, is_test=Fals
   for region in regions:
     chromRegionMap.setdefault(region.reference_name, []).append(region)
 
-  tmpFile = output_prefix + ".tmp.bed.bgz"
-  with bgzf.BgzfWriter(tmpFile, "wb") as fout:
+  tmp_file = output_prefix + ".tmp.bed.bgz"
+  with bgzf.BgzfWriter(tmp_file, "wb") as fout:
     with open(fasta_file, "rt") as fin:  
       for record in SeqIO.parse(fin,'fasta'):
         id = record.id
@@ -42,7 +42,7 @@ def fasta2dinucleotide(logger, fasta_file, bed_file, output_prefix, is_test=Fals
   output_file = output_prefix + ".bed.bgz"
   if os.path.exists(output_file):
     os.remove(output_file)
-  os.rename(tmpFile, output_file)
+  os.rename(tmp_file, output_file)
   runCmd("tabix -p bed %s " % output_file, logger)
 
   count_file = output_prefix + ".count"

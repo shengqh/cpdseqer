@@ -10,9 +10,9 @@ from Bio.Seq import Seq
 
 from .DinucleotideItem import DinucleotideItem
 
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, write_count_file
+from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, dinucleotide_to_count
 
-def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQuality=20, uniqueOnly=False, minCoverage=1, isTest=False):
+def bam2dinucleotide(logger, bamFile, output_prefix, genomeFastaFile, mappingQuality=20, uniqueOnly=False, minCoverage=1, isTest=False):
   check_file_exists(bamFile)
   check_file_exists(genomeFastaFile)
 
@@ -99,22 +99,22 @@ def bam2dinucleotide(logger, bamFile, outputPrefix, genomeFastaFile, mappingQual
               dinu = str(Seq(dinu).reverse_complement())
             di.dinucleotide = dinu
   
-  outputFile = outputPrefix + ".bed.bgz"
-  countMap = OrderedDict()
-  logger.info("Writing dinucleotide to " + outputFile + " ...")
-  with bgzf.BgzfWriter(outputFile, "wb") as fout:
+  tmp_file = output_prefix + ".tmp.bed.bgz"
+  logger.info("Writing dinucleotide to " + tmp_file + " ...")
+  with bgzf.BgzfWriter(tmp_file, "wb") as fout:
     for chrom in chrDinuMap.keys():
       diList = chrDinuMap[chrom]
-      chromMap = {}
       for s in diList:
         if (s.dinucleotide != "") and (not 'N' in s.dinucleotide):
-          countVec = chromMap.setdefault(s.dinucleotide, [0,0])
-          countVec[0] = countVec[0] + s.count
-          countVec[1] = countVec[1] + 1
           fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (s.reference_name, s.reference_start, s.reference_end, s.dinucleotide, s.count, s.strand))
-      countMap[chrom] = chromMap
   
-  write_count_file(logger, outputPrefix + ".count", countMap)
+  output_file = output_prefix + ".bed.bgz"
+  if os.path.exists(output_file):
+    os.remove(output_file)
+  os.rename(tmp_file, output_file)
+  runCmd("tabix -p bed %s " % output_file, logger)
 
-  runCmd("tabix -p bed %s " % outputFile, logger)
+  count_file = output_prefix + ".count"
+  dinucleotide_to_count(logger, output_file, count_file)
+
   logger.info("done.")

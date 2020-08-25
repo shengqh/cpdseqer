@@ -11,42 +11,36 @@ from _ctypes import ArgumentError
 
 from .common_utils import check_file_exists, runCmd, write_count_file, check_tool_exists
 
-def filter(logger, sourceFile, targetFile, outputPrefix, method):
-  check_file_exists(sourceFile)
-  check_file_exists(targetFile)
+def filter(logger, source_file, target_file, output_prefix, method):
+  check_file_exists(source_file)
+  check_file_exists(target_file)
 
   check_tool_exists("bedtools")
   check_tool_exists("tabix")
 
-  tmpFile = outputPrefix + ".tmp.bed"
+  tmp_bed = output_prefix + ".tmp.bed"
 
-  method_command = "bedtools %s -a \"%s\" -b \"%s\" > %s" % (method, sourceFile, targetFile, tmpFile)
+  method_command = "bedtools %s -a \"%s\" -b \"%s\" > %s" % (method, source_file, target_file, tmp_bed)
   runCmd(method_command, logger)
 
-  if not os.path.isfile(tmpFile):
+  if not os.path.isfile(tmp_bed):
     raise Exception("bedtools failed, no output file generated.")
 
-  outputFile = outputPrefix + ".bed.bgz"
-  countMap = OrderedDict()
-  logger.info("Writing dinucleotide to " + outputFile + " ...")
-  with bgzf.BgzfWriter(outputFile, "wb") as fout:
-    with open(tmpFile, "rt") as fin:
+  tmp_file = output_prefix + ".tmp.bed.bgz"
+  logger.info("Writing dinucleotide to " + tmp_file + " ...")
+  with bgzf.BgzfWriter(tmp_file, "wb") as fout:
+    with open(tmp_bed, "rt") as fin:
       for line in fin:
         fout.write(line)
-        parts = line.split('\t')
-        chrom = parts[0]
-        dinucleotide = parts[3]
-        count = int(parts[4])
-        chromMap = countMap.setdefault(chrom, {})
-        countVec = chromMap.setdefault(dinucleotide, [0,0])
-        countVec[0] = countVec[0] + count
-        countVec[1] = countVec[1] + 1
-  
-  countFile = outputPrefix + ".count"
-  write_count_file(logger, countFile, countMap)
+  os.remove(tmp_bed)
 
-  runCmd("tabix -p bed %s " % outputFile, logger)
+  output_file = output_prefix + ".bed.bgz"
+  if os.path.exists(output_file):
+    os.remove(output_file)
+  os.rename(tmp_file, output_file)
+  runCmd("tabix -p bed %s " % output_file, logger)
 
-  os.remove(tmpFile)
+  count_file = output_prefix + ".count"
+  dinucleotide_to_count(logger, output_file, count_file)
 
   logger.info("done.")
