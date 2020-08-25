@@ -238,6 +238,11 @@ def read_config_file(config_file):
       parts = line.rstrip().split('\t')
       result.append(ConfigItem(parts[1], parts[0]))
   
+  for item in result:
+    check_file_exists(item.dinucleotide_file)
+    check_file_exists(item.index_file)
+    check_file_exists(item.count_file)
+
   return(result)
 
 def write_count_file(logger, output_file, count_map):
@@ -251,7 +256,7 @@ def write_count_file(logger, output_file, count_map):
         fout.write("%s\t%s\t%d\t%d\n" % (chrom, dinucleotide, countVec[0], countVec[1]))
 
 def dinucleotide_to_count(logger, dinucleotide_file, count_file):
-  logger.info("Processing %s ..." % dinucleotide_file)
+  logger.info("Counting %s ..." % dinucleotide_file)
   count_map = OrderedDict()
   lineCount = 0
   with bgzf.BgzfReader(dinucleotide_file, "r") as fin:
