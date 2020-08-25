@@ -8,7 +8,7 @@ from collections import OrderedDict
 from Bio import SeqIO, bgzf
 from Bio.Seq import Seq
 
-from .common_utils import check_file_exists, runCmd, read_coordinate_file, write_count_file
+from .common_utils import check_file_exists, runCmd, read_coordinate_file, dinucleotide_to_count
 
 def fasta2dinucleotide(logger, fasta_file, bed_file, output_prefix, is_test=False):
   check_file_exists(fasta_file)
@@ -19,8 +19,6 @@ def fasta2dinucleotide(logger, fasta_file, bed_file, output_prefix, is_test=Fals
   for region in regions:
     chromRegionMap.setdefault(region.reference_name, []).append(region)
 
-  chrDinuMap = OrderedDict()
-  countMap = OrderedDict()
   tmpFile = output_prefix + ".tmp.bed.bgz"
   with bgzf.BgzfWriter(tmpFile, "wb") as fout:
     with open(fasta_file, "rt") as fin:  
@@ -41,10 +39,13 @@ def fasta2dinucleotide(logger, fasta_file, bed_file, output_prefix, is_test=Fals
             dinu = catSeq[si:(si+2)].upper()
             fout.write("%s\t%d\t%d\t%s\t%d\t%s\n" % (id, ci.reference_start + si, ci.reference_start + si + 2, dinu, 1, ci.strand))
 
-  outputFile = output_prefix + ".bed.bgz"
-  if os.path.exists(outputFile):
-    os.remove(outputFile)
-  os.rename(tmpFile, outputFile)
+  output_file = output_prefix + ".bed.bgz"
+  if os.path.exists(output_file):
+    os.remove(output_file)
+  os.rename(tmpFile, output_file)
+  runCmd("tabix -p bed %s " % output_file, logger)
 
-  runCmd("tabix -p bed %s " % outputFile, logger)
+  count_file = output_prefix + ".count"
+  dinucleotide_to_count(logger, output_file, count_file)
+
   logger.info("done.")

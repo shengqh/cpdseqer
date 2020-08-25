@@ -6,6 +6,7 @@ import shutil
 import hashlib
 import gzip
 from collections import OrderedDict
+from Bio import bgzf
 from shutil import which
 
 MUT_LEVELS=['TT','TC','CC','CT']
@@ -206,13 +207,13 @@ def md5sum(filename, blocksize=65536):
     return hash.hexdigest()
 
 def read_chromosomes(countFile):
-    chromMap = {}
+    chrom_map = {}
     with open(countFile, "rt") as fin:
       fin.readline()
       for line in fin:
         parts = line.split('\t')
-        chromMap[parts[0]] = 1
-    return (sorted(list(chromMap.keys())))
+        chrom_map[parts[0]] = 1
+    return (sorted(list(chrom_map.keys())))
     
 def get_count_file(dinucleotide_file):
   return(dinucleotide_file.replace(".bed.bgz", ".count"))
@@ -239,15 +240,35 @@ def read_config_file(config_file):
   
   return(result)
 
-def write_count_file(logger, outputFile, countMap):
-  logger.info("Writing count file %s ..." % outputFile)
-  with open(outputFile, "wt") as fout:
+def write_count_file(logger, output_file, count_map):
+  logger.info("Writing count file %s ..." % output_file)
+  with open(output_file, "wt") as fout:
     fout.write("Chromosome\tDinucleotide\tReadCount\tSiteCount\n")
-    for chrom in countMap.keys():
-      chromMap = countMap[chrom]
-      for dinucleotide in chromMap.keys():
-        countVec = chromMap[dinucleotide]
+    for chrom in count_map.keys():
+      chrom_map = count_map[chrom]
+      for dinucleotide in chrom_map.keys():
+        countVec = chrom_map[dinucleotide]
         fout.write("%s\t%s\t%d\t%d\n" % (chrom, dinucleotide, countVec[0], countVec[1]))
+
+def dinucleotide_to_count(logger, dinucleotide_file, count_file):
+  logger.info("Processing %s ..." % dinucleotide_file)
+  count_map = OrderedDict()
+  lineCount = 0
+  with bgzf.BgzfReader(dinucleotide_file, "r") as fin:
+    for line in fin:
+      lineCount += 1
+      if lineCount % 100000 == 0:
+        logger.info(lineCount)
+        
+      parts = line.rstrip().split('\t')
+      chrom = parts[0]
+      dinucleotide = parts[3]
+      count = int(parts[4])
+      chrom_map = count_map.setdefault(chrom, {})
+      countVec = chrom_map.setdefault(dinucleotide, [0,0])
+      countVec[0] = countVec[0] + count
+      countVec[1] = countVec[1] + 1
+  write_count_file(logger, count_file, count_map)
 
 def check_tool_exists(name):
   if which(name) is None:
