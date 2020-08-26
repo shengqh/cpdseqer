@@ -1,4 +1,5 @@
 import os
+import gzip
 from collections import OrderedDict
 from Bio import bgzf
 
@@ -54,8 +55,8 @@ class AbstractSizeFactor:
       
       sites = self.merge_sites(logger, sites, curSites, item.name)
 
-    target_count_file = output_prefix + self.suffix + ".count"
-    with open(target_count_file, "wt") as fout:
+    target_count_file = output_prefix + self.suffix + ".count.gz"
+    with gzip.open(target_count_file, 'wt') as fout:
       fout.write("Feature\t%s\n" % "\t".join([item.name for item in items]))
       for site in sites.keys():
         sample_dic = sites[site]

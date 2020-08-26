@@ -47,7 +47,7 @@ sudo apt install python3.7
 Install R packages in R
 
 ```
-install.packages(c("knitr","rmarkdown", "data.table"))
+install.packages(c("knitr","rmarkdown", "data.table", "R.utils"))
 
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
