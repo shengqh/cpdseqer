@@ -6,7 +6,7 @@ setwd('/scratch/cqs/shengq2/guoyan/test/size_factor')
 library("data.table")
 library(edgeR)
 
-bedCM <- fread(count_file,header=T,data.table=F) # bed Count Matrix
+bedCM <- fread(cmd=paste0(c('zcat',count_file),collapse=' '),header=T,data.table=F) # bed Count Matrix
 bedCM<-bedCM[,-1]
 normFac <- calcNormFactors(bedCM,method='TMM')
 librarysize = colSums(bedCM)
