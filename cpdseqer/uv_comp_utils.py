@@ -9,21 +9,7 @@ from .background_utils import genome_background, genome_background_region, calc_
 from .count_utils import count
 from .__version__ import __version__
 
-def read_config_file(config_file):
-  result = []
-  with open(config_file, "rt") as fin:
-    headers = fin.readline().rstrip().split('\t')
-    name_index = headers.index("Name")
-    file_index = headers.index("File")
-    case_index = headers.index("Case")
-    for line in fin:
-      parts = line.rstrip().split('\t')
-      if len(parts) < len(headers):
-        continue
-      result.append(ConfigItem(parts[name_index], parts[file_index], parts[case_index]))
-  return(result)
-
-def uv_comp_genome(logger, count_list_file, output_prefix, db, count_type):
+def uv_comp_genome(logger, count_list_file, output_prefix, db, count_type, genome, size_factor_file):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   countFileMap = readFileMap(count_list_file)
@@ -32,8 +18,12 @@ def uv_comp_genome(logger, count_list_file, output_prefix, db, count_type):
   options = {
     "scenario": "sce1",
     "smp": countFiles,
-    "cntType": count_type 
+    "cntType": count_type,
+    "gn": genome 
   }
+
+  if size_factor_file != None:
+    options["libSizeNorm"] = size_factor_file
 
   targetFolder = os.path.dirname(os.path.abspath(output_prefix))
 
@@ -62,7 +52,7 @@ def calc_reg(logger, output_prefix, coordinate_file, db, useSpace, addChr):
   reg = calc_dinucleotide_distribution(db_coord_count_file)
   return(reg)
 
-def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file, useSpace=False, addChr=False):
+def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file, genome, size_factor_file, useSpace, addChr):
   check_file_exists(db)
   coordinate_file = check_data_file_exists(coordinate_file)
 
@@ -76,8 +66,12 @@ def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type,
     "scenario": "sce1",
     "cntType": count_type ,
     "reg": ",".join(reg),
-    "smp": sample_count_file
+    "smp": sample_count_file,
+    "gn": genome 
   }
+
+  if size_factor_file != None:
+    options["libSizeNorm"] = size_factor_file
 
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
@@ -86,15 +80,10 @@ def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type,
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (os.path.dirname(os.path.abspath(targetScript)), os.path.basename(targetScript))
   runCmd(cmd, logger)
 
-def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file1, coordinate_file2, useSpace=False, addChr=False):
+def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file1, coordinate_file2, genome, size_factor_file, useSpace, addChr):
   check_file_exists(db)
   coordinate_file1 = check_data_file_exists(coordinate_file1)
   coordinate_file2 = check_data_file_exists(coordinate_file2)
-
-  options = {
-    "scenario": "sce2",
-    "cntType": count_type 
-  }
 
   reg1 = calc_reg(logger, output_prefix, coordinate_file1, db, useSpace, addChr)
   logger.info("reg1=" + str(reg1))
@@ -114,8 +103,12 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
     "smp1": reg_count_file1,
     "smp2": reg_count_file2,
     "reg1": ",".join(reg1),
-    "reg2": ",".join(reg2)
+    "reg2": ",".join(reg2),
+    "gn": genome 
   }
+
+  if size_factor_file != None:
+    options["libSizeNorm"] = size_factor_file
 
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
@@ -124,7 +117,7 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (os.path.dirname(os.path.abspath(targetScript)), os.path.basename(targetScript))
   runCmd(cmd, logger)
 
-def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, count_type):
+def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, count_type, genome, size_factor_file):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   countFileMap1 = readFileMap(count_list_file1)
@@ -137,8 +130,12 @@ def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, co
     "scenario": "sce3",
     "smp1": countFiles1,
     "smp2": countFiles2,
-    "cntType": count_type 
+    "cntType": count_type, 
+    "gn": genome 
   }
+
+  if size_factor_file != None:
+    options["libSizeNorm"] = size_factor_file
 
   targetFolder = os.path.dirname(os.path.abspath(output_prefix))
 
@@ -148,7 +145,7 @@ def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, co
   runCmd(cmd, logger)
 
 
-def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefix, count_type, coordinate_file, useSpace=False, addChr=False):
+def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefix, count_type, coordinate_file, genome, size_factor_file, useSpace, addChr):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   coordinate_file = check_data_file_exists(coordinate_file)
@@ -163,8 +160,12 @@ def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefi
     "scenario": "sce3",
     "smp1": sample_count_file1,
     "smp2": sample_count_file2,
-    "cntType": count_type 
+    "cntType": count_type, 
+    "gn": genome 
   }
+
+  if size_factor_file != None:
+    options["libSizeNorm"] = size_factor_file
 
   targetFolder = os.path.dirname(os.path.abspath(output_prefix))
 

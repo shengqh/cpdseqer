@@ -9,14 +9,14 @@ import gzip
 from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_rmd_script, ConfigItem, read_config_file
 from .__version__ import __version__
 
-def qc(logger, configFile, project_name, output_prefix, count_type):
+def qc(logger, configFile, project_name, output_prefix, count_type, genome, size_factor_file):
   check_file_exists(configFile)
 
   items = read_config_file(configFile)
   logger.info("Config:" + str(items))
 
   if len(items) == 0:
-    raise ArgumentError("configFile %s is empty" % configFile)
+    raise Exception("configFile %s is empty" % configFile)
 
   for item in items:
     check_file_exists(item.dinucleotide_file)
@@ -24,19 +24,18 @@ def qc(logger, configFile, project_name, output_prefix, count_type):
     check_file_exists(item.count_file)
   
   if len(items) == 1:
-    single_qc(logger, items[0], output_prefix, count_type)
+    single_qc(logger, items[0], output_prefix, count_type, genome)
   else:
-    multi_qc(logger, project_name, items, output_prefix, count_type)
+    multi_qc(logger, project_name, items, output_prefix, count_type, genome, size_factor_file)
 
 
-def single_qc(logger, config_item, output_prefix, count_type):
-  targetFolder = os.path.dirname(output_prefix)
-
+def single_qc(logger, config_item, output_prefix, count_type, genome):
   options = {
     "sample": config_item.name,
     "bgz": config_item.dinucleotide_file,
     "cnt": config_item.count_file,
-    "count_type": count_type 
+    "count_type": count_type,
+    "gn": genome 
   }
 
   rScript = os.path.join( os.path.dirname(__file__), "qc.Rmd")
@@ -46,9 +45,7 @@ def single_qc(logger, config_item, output_prefix, count_type):
   runCmd(cmd, logger)
 
 
-def multi_qc(logger, project_name, config_items, output_prefix, count_type):
-  targetFolder = os.path.dirname(output_prefix)
-
+def multi_qc(logger, project_name, config_items, output_prefix, count_type, genome, size_factor_file):
   targetConfigFile = output_prefix + ".config"
   with open(targetConfigFile, "wt") as fout:
     for item in config_items:
@@ -60,8 +57,12 @@ def multi_qc(logger, project_name, config_items, output_prefix, count_type):
     "smps":	os.path.basename(targetConfigFile),
     "dinuc": "DINUC4",
     "cntType": count_type,
-    "exp": project_name
+    "exp": project_name,
+    "gn": genome
   }
+
+  if size_factor_file != None:
+    options["libSizeNorm"] = size_factor_file
 
   targetScript = write_rmd_script(output_prefix, rScript, options)
 
