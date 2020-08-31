@@ -26,11 +26,15 @@ source('Rfunctions.R')
 ```{r stat, echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 opts <- read.delim(option_file,head=F,as.is=T)
 optAssignments <- paste0(opts[,1],'=\'',opts[,2],'\'')
+logic.ix <- which(toupper(opts[,2])%in%c('T','F','TRUE','FALSE','NULL')) # treating assignment values T, F, NULL specially
+if (length(logic.ix)>0)
+  optAssignments[logic.ix] <- paste0(opts[logic.ix,1],'=',opts[logic.ix,2])
 exp <- 'Experiment' # or a study
 DINUC4 <- c('TT','TC','CC','CT')
 cntType <- 'rCnt'
 nDigit <- 3
 gn <- 'hg38'
+libSizeNorm <- NULL
 attach(QCrefRange[[gn]])
 for (assignment in optAssignments) {
   eval(parse(text=assignment))
@@ -41,7 +45,7 @@ if (!exists('smps')) {
 } else {
 	meta <- read.delim(smps,head=F,as.is=T)
 	K <- nrow(meta)
-	feedback=paste0('**Study**: *',exp,'*; **Genome**: *',gn,'*; ',K,'* *samples;* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
+	feedback=paste0('**Study**: *',exp,'*; **Genome**: *',gn,'*; ',K,'* *samples;* **CPM_TMMnormalized**: *',libSizeNorm,'* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
 	feedback <- gsub('rCnt','ReadCount',feedback)
 	feedback <- gsub('sCnt','SiteCount',feedback)
 	effRange <- switch(cntType,
@@ -64,7 +68,7 @@ if (!exists('smps')) {
 		conts[sample] <- contrast(counts[sample],cntType)
 		symRes <- symmetry(bgzs[sample],cntType)
 		bed <- symRes$bed
-		bedS[[sample]] <- bed #bed[bed[,4]%in%dinuc,] # UPDATE 8/19/20
+		bedS[[sample]] <- bed #bed[bed[,4]%in%dinuc,]
 		sym <- symRes$sym7[,dinuc]
 		syms[sample] <- signif(sym[1]/sym[2],nDigit)
 	}
@@ -88,8 +92,7 @@ __Read Count Distribution__
 ```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 plotM_EffCont(effs,conts,effRange,contRange,exp)
 knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
-plotM_rcDistrib.res <- plotM_rcDistrib(bedS,exp,gn,dinuc,pts=c(0,5,10)) # UPDATE 8/6/20 with added gn argument
-write.table(plotM_rcDistrib.res$normFac,'normFactors.txt',quote=F,sep='\t',col.names=F)
+plotM_rcDistrib.res <- plotM_rcDistrib(bedS,exp,gn,libSizeNorm,dinuc,pts=c(0,5,10))
 detach(QCrefRange[[gn]])
 ```
 
