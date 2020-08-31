@@ -88,16 +88,16 @@ def main():
   parser_qc.add_argument('-n', '--name', action='store', nargs='?', help='Input project name')
   parser_qc.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_qc.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_qc.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
+  parser_qc.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
   parser_qc.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
 
   # create the parser for the "fig_genome" command
   parser_fig_genome = subparsers.add_parser('fig_genome', help="Generate statistic figure on genome/chromosome level")
   parser_fig_genome.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_fig_genome.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count (default 100000)')
-  parser_fig_genome.add_argument('-d', '--db', action='store', nargs='?', default="hg38", help='Input database version, hg38 or hg19 (default hg38)')
   parser_fig_genome.add_argument('-n', '--norm_type', action='store', nargs='?', choices=list(["None", "Total", "LocalGC"]), default="None", help='Normalization type')
   parser_fig_genome.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+  parser_fig_genome.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19 (default hg38) or chromosome length file')
 
   # create the parser for the "fig_position" command
   parser_fig_position = subparsers.add_parser('fig_position', help='Generate statistic figure on relative position in coordinate file')
@@ -113,7 +113,7 @@ def main():
   parser_uv_comp_genome.add_argument('-i', '--input', action='store', nargs='?', help='Input count list file, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_uv_comp_genome.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_uv_comp_genome.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_uv_comp_genome.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
+  parser_uv_comp_genome.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
   parser_uv_comp_genome.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
 
   parser_uv_comp_genome_region = subparsers.add_parser('uv_comp_genome_region', help='Compare UV radiation damage between sample(s) and reference genome background in specific region')
@@ -124,7 +124,7 @@ def main():
   parser_uv_comp_genome_region.add_argument('-f', '--fasta', action='store', nargs='?', help='Input reference genome fasta file')
   parser_uv_comp_genome_region.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_uv_comp_genome_region.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_uv_comp_genome_region.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
+  parser_uv_comp_genome_region.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
   parser_uv_comp_genome_region.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
 
   parser_uv_comp_regions = subparsers.add_parser('uv_comp_regions', help='Compare UV radiation damage between different regions in genome')
@@ -136,7 +136,7 @@ def main():
   parser_uv_comp_regions.add_argument('-f', '--fasta', action='store', nargs='?', help='Input reference genome fasta file')
   parser_uv_comp_regions.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_uv_comp_regions.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_uv_comp_regions.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
+  parser_uv_comp_regions.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
   parser_uv_comp_regions.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
 
   parser_uv_comp_groups = subparsers.add_parser('uv_comp_groups', help='Compare UV radiation damage between different sample groups')
@@ -144,7 +144,7 @@ def main():
   parser_uv_comp_groups.add_argument('-i2', '--input2', action='store', nargs='?', help='Input CPD count list file 2, first column is file location, second column is file name', required=NOT_DEBUG)
   parser_uv_comp_groups.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_uv_comp_groups.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_uv_comp_groups.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
+  parser_uv_comp_groups.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
   parser_uv_comp_groups.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
 
   parser_uv_comp_groups_region = subparsers.add_parser('uv_comp_groups_region', help='Compare UV radiation damage between different sample groups in specific region')
@@ -155,7 +155,7 @@ def main():
   parser_uv_comp_groups_region.add_argument('--add_chr', action='store_true', help='Add chr to chromosome name in coordinate file')
   parser_uv_comp_groups_region.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_uv_comp_groups_region.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
-  parser_uv_comp_groups_region.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38) or genome fasta file')
+  parser_uv_comp_groups_region.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
   parser_uv_comp_groups_region.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
   
   if not DEBUG and len(sys.argv) == 1:
@@ -199,7 +199,7 @@ def main():
     size_factor(logger, args.input, args.output, args.calc_type)
   elif args.command == "fig_genome":
     logger = initialize_logger(args.output + ".log", args)
-    fig_genome(logger, args.input, args.output, args.block, args.db, args.norm_type)
+    fig_genome(logger, args.input, args.output, args.block, args.genome, args.norm_type)
   elif args.command == "fig_position":
     logger = initialize_logger(args.output + ".log", args)
     fig_position(logger, args.input, args.output, args.coordinate_file, args.background_file, args.space, args.add_chr, args.test)

@@ -9,7 +9,7 @@ from .CategoryItem import CategoryItem
 from .common_utils import MUT_LEVELS, check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script, ConfigItem, read_config_file
 from .__version__ import __version__
 
-def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, normType):
+def fig_genome(logger, configFile, outputFilePrefix, block, genome, normType):
   check_file_exists(configFile)
 
   items = read_config_file(configFile)
@@ -26,14 +26,14 @@ def fig_genome(logger, configFile, outputFilePrefix, block, dbVersion, normType)
   if not os.path.exists(rScript):
     raise Exception("Cannot find rScript %s" % rScript)
 
-  if os.path.isfile(dbVersion):
-    chromInfo_file = dbVersion
-  elif dbVersion == "hg19":
+  if os.path.isfile(genome):
+    chromInfo_file = genome
+  elif genome == "hg19":
     chromInfo_file = os.path.join(os.path.dirname(__file__), "data", "chromInfo_hg19.txt")
-  elif dbVersion == 'hg38':
+  elif genome == 'hg38':
     chromInfo_file = os.path.join(os.path.dirname(__file__), "data", "chromInfo_hg38.txt")
   else:
-    raise Exception("I don't understand dbVersion: %s" % dbVersion)
+    raise Exception("I don't understand genome: %s" % genome)
 
   level_chr = ['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
   #level_mut = ['AA', 'AC', 'AG', 'AT', 'CA', 'CC', 'CG', 'CT', 'GA', 'GC', 'GG', 'GT', 'TA', 'TC', 'TG', 'TT']
