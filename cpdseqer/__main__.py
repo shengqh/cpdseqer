@@ -134,7 +134,7 @@ def main():
   # create the parser for the "size_factor" command
   parser_f = subparsers.add_parser('size_factor', help='Calculate size factor for multiple dinucleotide files')
   parser_f.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_f.add_argument('--calc_type', action='store', nargs='?', choices=list(["site_intersect", "site_union", "chrom_dinucleotide"]), default="site_intersect", help='Calculate size factor for normalization')
+  parser_f.add_argument('--calc_type', action='store', nargs='?', choices=list(["site_union", "chrom_dinucleotide"]), default="chrom_dinucleotide", help='Calculate size factor for normalization')
   parser_f.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_u = subparsers.add_parser('uv_comp_genome', help='Compare UV radiation damage between sample(s) and reference genome background')
