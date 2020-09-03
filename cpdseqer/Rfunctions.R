@@ -501,7 +501,7 @@ plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
 	mtext(side=2,line=5,text='Frequency',cex=2)
 	barplot(pctg.all[-nrow(pctg.all),],beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
 		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
-	mtext(side=2,line=5,text='Proportion',cex=2)
+	mtext(side=2,line=5,text='Percentage (%)',cex=2)
   freqTbl <- rbind(Freq,All=Freq.all)
 	colnames(pctg.all) <- paste(colnames(freqTbl),'(%)')
 	colnames(freqTbl) <- paste(colnames(freqTbl),'(frequency)')
