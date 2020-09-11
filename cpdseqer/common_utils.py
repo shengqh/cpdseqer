@@ -207,13 +207,13 @@ def md5sum(filename, blocksize=65536):
     return hash.hexdigest()
 
 def read_chromosomes(countFile):
-    chrom_map = {}
+    chrom_map = OrderedDict()
     with open(countFile, "rt") as fin:
       fin.readline()
       for line in fin:
         parts = line.split('\t')
         chrom_map[parts[0]] = 1
-    return (sorted(list(chrom_map.keys())))
+    return (list(chrom_map.keys()))
     
 def get_count_file(dinucleotide_file):
   return(dinucleotide_file.replace(".bed.bgz", ".count"))
@@ -278,3 +278,44 @@ def dinucleotide_to_count(logger, dinucleotide_file, count_file):
 def check_tool_exists(name):
   if which(name) is None:
     raise Exception("Tool %s not found, please install it before calling cpdseqer" % name)
+
+def is_contig_reference(chromosome):
+  return (len(chromosome) > 5)
+
+def read_chromosome_length(chromInfo_file, accept_chromosome_func = None):
+  result = OrderedDict()
+  with open(chromInfo_file, "rt") as fin:
+    for line in fin:
+      if line.startswith("#"):
+        continue
+
+      parts = line.rstrip().split('\t')
+      chrom = parts[0]
+      if (accept_chromosome_func != None) and (not accept_chromosome_func(chrom)):
+        continue
+
+      chromLength = int(parts[1])
+      result[chrom] = chromLength
+
+  return(result)
+
+def get_blocks(chromLengthMap, block):
+  result = []
+  for chrom in chromLengthMap.keys():
+    chromLength =  chromLengthMap[chrom]
+
+    chromStart = 0
+    while chromStart < chromLength:
+      chromEnd = min(chromStart + block, chromLength)
+      result.append(CategoryItem(chrom, chromStart, chromEnd, None))
+      chromStart = chromStart + block
+  return(result)
+
+def is_major_chromosome(chrom):
+  if chrom.startswith("chr"):
+    return len(chrom) < 6 #such as chr11, chrM, chrX, chrY
+  else:
+    return len(chrom) < 3 #such as 11, M, X, Y
+
+def is_major_chromosome_without_chrM(chrom):
+  return is_major_chromosome(chrom) and (chrom != "chrM") and (chrom != "M") and (chrom != "chrMT") and (chrom != "MT")

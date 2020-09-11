@@ -3,7 +3,8 @@ import gzip
 from collections import OrderedDict
 from Bio import bgzf
 
-from .common_utils import MUT_LEVELS, check_file_exists, write_r_script, read_config_file, runCmd
+from .common_utils import MUT_LEVELS, check_file_exists, write_r_script, read_config_file, runCmd, is_contig_reference
+
 
 class AbstractSizeFactor:
   def __init__(self):
@@ -20,6 +21,11 @@ class AbstractSizeFactor:
           logger.info(line_count)
           
         parts = line.rstrip().split('\t')
+
+        #ignore the chromomsome contigs
+        if is_contig_reference(parts[0]):
+          continue
+
         key = "%s_%s_%s" % (parts[0], parts[1], parts[3])
         curSites[key] = parts[4]
     return(curSites)
@@ -75,7 +81,7 @@ class AbstractSizeFactor:
 
 
 def intersect_features(logger, total_sites, cur_sites, sample_name):
-  result = {}
+  result = OrderedDict()
   for site in cur_sites.keys():
     if site in total_sites:
       result[site] = total_sites[site]
@@ -113,7 +119,7 @@ class SizeFactorChromDinucleotide(AbstractSizeFactor):
 
     result = OrderedDict()
     with open(item.count_file, "rt") as fin:
-      header = fin.readline()
+      fin.readline()
       for line in fin:
         parts = line.rstrip().split('\t')
 
@@ -122,7 +128,7 @@ class SizeFactorChromDinucleotide(AbstractSizeFactor):
         #  continue
 
         #ignore the chromomsome contigs
-        if len(parts[0]) > 4:
+        if is_contig_reference(parts[0]):
           continue
 
         key = parts[0] + "_" + parts[1]

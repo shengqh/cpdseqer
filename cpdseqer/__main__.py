@@ -17,6 +17,8 @@ from .uv_comp_utils import uv_comp_genome, uv_comp_genome_region, uv_comp_region
 from .qc_utils import qc
 from .filter_utils import filter
 from .fasta2dinucleotide_utils import fasta2dinucleotide
+from .fasta2bincount_utils import fasta2bincount
+from .dinucleotide2bincount_utils import dinucleotide2bincount
 from .size_factor_utils import size_factor
 
 # CPD-seq data analysis
@@ -69,6 +71,19 @@ def main():
   parser_fasta2dinucleotide.add_argument('-i', '--input', action='store', nargs='?', help='Input fasta file', required=NOT_DEBUG)
   parser_fasta2dinucleotide.add_argument('-c', '--coordinate_file', action='store', nargs='?', help='Input coordinate bed file', required=NOT_DEBUG)
   parser_fasta2dinucleotide.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
+
+  # create the parser for the "dinucleotide2bincount" command
+  parser_dinucleotide2bincount = subparsers.add_parser('dinucleotide2bincount', help='Extract dinucleotide count from dinucleotide file')
+  parser_dinucleotide2bincount.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide file', required=NOT_DEBUG)
+  parser_dinucleotide2bincount.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19 (default hg38), can also be chromsome length file')
+  parser_dinucleotide2bincount.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count (default 100000)')
+  parser_dinucleotide2bincount.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
+
+  # create the parser for the "fasta2bincount" command
+  parser_fasta2bincount = subparsers.add_parser('fasta2bincount', help='Extract dinucleotide count from fasta file')
+  parser_fasta2bincount.add_argument('-i', '--input', action='store', nargs='?', help='Input fasta file', required=NOT_DEBUG)
+  parser_fasta2bincount.add_argument('-b', '--block', type=int, default=100000, nargs='?', help='Block size for summerize dinucleotide count (default 100000)')
+  parser_fasta2bincount.add_argument('-o', '--output', action='store', nargs='?', help="Output file name", required=NOT_DEBUG)
 
   # create the parser for the "filter" command
   parser_filter = subparsers.add_parser('filter', help='Filter dinucleotide from dinucleotide file')
@@ -182,6 +197,12 @@ def main():
   elif args.command == "fasta2dinucleotide":
     logger = initialize_logger(args.output + ".log", args)
     fasta2dinucleotide(logger, args.input, args.coordinate_file, args.output)
+  elif args.command == "fasta2bincount":
+    logger = initialize_logger(args.output + ".log", args)
+    fasta2bincount(logger, args.input, args.output, args.block)
+  elif args.command == "dinucleotide2bincount":
+    logger = initialize_logger(args.output + ".log", args)
+    dinucleotide2bincount(logger, args.input, args.output, args.block, args.genome)
   elif args.command == "filter":
     logger = initialize_logger(args.output + ".log", args)
     filter(logger, args.input, args.coordinate_file, args.output, args.method)    
