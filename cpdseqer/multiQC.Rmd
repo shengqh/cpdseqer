@@ -90,11 +90,11 @@ __Efficiency&Contrast__
 
 __Read Count Distribution__
 
-__Principal Component Analysis of Chromosome_Dinucleotide Counts__
+__Principal Component Analysis of Chromosome-Dinucleotide Counts__
 
-__Heatmap of Chromosome_Dinucleotide Counts__
+__Heatmap of Chromosome-Dinucleotide Counts__
 
-__Sample Pairwise Correlation based on Chromosome_Dinucleotide Counts__
+__Sample Pairwise Correlation based on Chromosome-Dinucleotide Counts__
 
 
 </font>

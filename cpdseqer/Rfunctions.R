@@ -511,16 +511,17 @@ plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
 # INVOKED by rcSitePctg2one(),plot_rcDistrib(). 
 # INPUT bed0: data frame read from bed file (secondary output of symmetry()) 
 # OUTPUT: Five-by-three percentage site table. Top four rows for TT, TC, CC, and CT, bottom row for All.
+# UPDATE 9/15/20: Removed unnecessary 2 times multiplication in two places. Those percentages in single-sample QC report should increase by two.
 rcSitePctg <- function(bed0,gn='hg38',pts=c(0,5,10)) { # Read Count Sites Percentages
 	bed0 <- bed0[bed0[,6]=='+',] # using forward (+) sites only.
 	rc <- bed0[,5]
 	DINUC4=c('TT','TC','CC','CT')
 	RC4 <- split(rc,factor(bed0[,4]))[DINUC4]
-	scope <- floor(dinuc4p[[gn]]*(2*gnNucs[gn]))
+	scope <- floor(dinuc4p[[gn]]*gnNucs[gn])
   Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
 	pctg <- Freq/scope
   Freq.all <- exceedingCnt(rc,pts)
-	pctg.all <- Freq.all/(2*gnNucs[gn])
+	pctg.all <- Freq.all/gnNucs[gn]
 	pctgCols <- rbind(pctg,All=pctg.all)
 	colnames(pctgCols) <- paste('Reads',pts,sep='>')
 	pctgCols # percentage columns
