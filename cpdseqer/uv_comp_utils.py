@@ -54,7 +54,7 @@ def calc_reg(logger, output_prefix, coordinate_file, db, useSpace, addChr):
   reg = calc_dinucleotide_distribution(db_coord_count_file)
   return(reg)
 
-def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file, genome, size_factor_file, useSpace, addChr):
+def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file, size_factor_file, useSpace, addChr):
   check_file_exists(db)
   coordinate_file = check_data_file_exists(coordinate_file)
 
@@ -72,8 +72,7 @@ def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type,
     "cntType": count_type ,
     "reg": ",".join(reg),
     "smpnames": dinuNames,
-    "smp": sample_count_file,
-    "gn": genome 
+    "smp": sample_count_file
   }
 
   if size_factor_file != None:
@@ -86,7 +85,7 @@ def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type,
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (os.path.dirname(os.path.abspath(targetScript)), os.path.basename(targetScript))
   runCmd(cmd, logger)
 
-def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file1, coordinate_file2, genome, useSpace, addChr):
+def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file1, coordinate_file2, useSpace, addChr):
   check_file_exists(db)
   coordinate_file1 = check_data_file_exists(coordinate_file1)
   coordinate_file2 = check_data_file_exists(coordinate_file2)
@@ -109,8 +108,7 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
     "smp1": reg_count_file1,
     "smp2": reg_count_file2,
     "reg1": ",".join(reg1),
-    "reg2": ",".join(reg2),
-    "gn": genome 
+    "reg2": ",".join(reg2) 
   }
 
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
@@ -120,7 +118,7 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (os.path.dirname(os.path.abspath(targetScript)), os.path.basename(targetScript))
   runCmd(cmd, logger)
 
-def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, count_type, genome, size_factor_file):
+def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, count_type, size_factor_file):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   countFileMap1 = readFileMap(count_list_file1)
@@ -137,8 +135,7 @@ def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, co
     "smp1names": countName1,
     "smp2": countFiles2,
     "smp2names": countName2,
-    "cntType": count_type, 
-    "gn": genome 
+    "cntType": count_type 
   }
 
   if size_factor_file != None:
@@ -152,7 +149,7 @@ def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, co
   runCmd(cmd, logger)
 
 
-def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefix, count_type, coordinate_file, genome, size_factor_file, useSpace, addChr):
+def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefix, count_type, coordinate_file, size_factor_file, useSpace, addChr):
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   coordinate_file = check_data_file_exists(coordinate_file)
@@ -173,8 +170,7 @@ def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefi
     "smp1names": dinuNames1,
     "smp2": sample_count_file2,
     "smp2names": dinuNames2,
-    "cntType": count_type, 
-    "gn": genome 
+    "cntType": count_type 
   }
 
   if size_factor_file != None:
