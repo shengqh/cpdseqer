@@ -14,9 +14,11 @@ def uv_comp_genome(logger, count_list_file, output_prefix, db, count_type, genom
 
   countFileMap = readFileMap(count_list_file)
   countFiles = ",".join([countFileMap[name] for name in sorted(countFileMap.keys())])
+  countNames = ",".join([name for name in sorted(countFileMap.keys())])
 
   options = {
     "scenario": "sce1",
+    "smpnames": countNames,
     "smp": countFiles,
     "cntType": count_type,
     "gn": genome 
@@ -62,10 +64,14 @@ def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type,
   sample_count_file = output_prefix + ".sample.count"
   count(logger, dinu_list_file, sample_count_file, coordinate_file, useSpace, addChr)
 
+  dinuFileMap = readFileMap(dinu_list_file)
+  dinuNames = ",".join([name for name in sorted(dinuFileMap.keys())])
+
   options = {
     "scenario": "sce1",
     "cntType": count_type ,
     "reg": ",".join(reg),
+    "smpnames": dinuNames,
     "smp": sample_count_file,
     "gn": genome 
   }
@@ -80,7 +86,7 @@ def uv_comp_genome_region(logger, dinu_list_file, output_prefix, db, count_type,
   cmd = "R -e \"setwd('%s');library(knitr);rmarkdown::render('%s');\"" % (os.path.dirname(os.path.abspath(targetScript)), os.path.basename(targetScript))
   runCmd(cmd, logger)
 
-def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file1, coordinate_file2, genome, size_factor_file, useSpace, addChr):
+def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coordinate_file1, coordinate_file2, genome, useSpace, addChr):
   check_file_exists(db)
   coordinate_file1 = check_data_file_exists(coordinate_file1)
   coordinate_file2 = check_data_file_exists(coordinate_file2)
@@ -107,9 +113,6 @@ def uv_comp_regions(logger, dinu_list_file, output_prefix, db, count_type, coord
     "gn": genome 
   }
 
-  if size_factor_file != None:
-    options["libSizeNorm"] = size_factor_file
-
   rScript = os.path.join( os.path.dirname(__file__), "stat_scenarios.Rmd")
 
   targetScript = write_rmd_script(output_prefix, rScript, options)
@@ -122,14 +125,18 @@ def uv_comp_groups(logger, count_list_file1, count_list_file2, output_prefix, co
 
   countFileMap1 = readFileMap(count_list_file1)
   countFiles1 = ",".join([countFileMap1[name] for name in sorted(countFileMap1.keys())])
+  countName1 = ",".join([name for name in sorted(countFileMap1.keys())])
 
   countFileMap2 = readFileMap(count_list_file2)
   countFiles2 = ",".join([countFileMap2[name] for name in sorted(countFileMap2.keys())])
+  countName2 = ",".join([name for name in sorted(countFileMap2.keys())])
 
   options = {
     "scenario": "sce3",
     "smp1": countFiles1,
+    "smp1names": countName1,
     "smp2": countFiles2,
+    "smp2names": countName2,
     "cntType": count_type, 
     "gn": genome 
   }
@@ -152,14 +159,20 @@ def uv_comp_groups_region(logger, dinu_list_file1, dinu_list_file2, output_prefi
 
   sample_count_file1 = output_prefix + ".sample1.count"
   count(logger, dinu_list_file1, sample_count_file1, coordinate_file, useSpace, addChr)
+  dinuFileMap = readFileMap(dinu_list_file1)
+  dinuNames1 = ",".join([name for name in sorted(dinuFileMap.keys())])
 
   sample_count_file2 = output_prefix + ".sample2.count"
   count(logger, dinu_list_file2, sample_count_file2, coordinate_file, useSpace, addChr)
+  dinuFileMap = readFileMap(dinu_list_file2)
+  dinuNames2 = ",".join([name for name in sorted(dinuFileMap.keys())])
 
   options = {
     "scenario": "sce3",
     "smp1": sample_count_file1,
+    "smp1names": dinuNames1,
     "smp2": sample_count_file2,
+    "smp2names": dinuNames2,
     "cntType": count_type, 
     "gn": genome 
   }

@@ -152,7 +152,6 @@ def main():
   parser_uv_comp_regions.add_argument('--count_type', action='store', nargs='?', choices=list(["rCnt", "sCnt"]), default="rCnt", help='Input count type, rCnt/sCnt (read count/site count, default rCnt)')
   parser_uv_comp_regions.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
   parser_uv_comp_regions.add_argument('-g', '--genome', action='store', nargs='?', default="hg38", help='Input reference genome, hg38/hg19/saccer3 (default hg38)')
-  parser_uv_comp_regions.add_argument('-s', '--size_factor_file', action='store', nargs='?', help='Input size factor file for normalization')
 
   parser_uv_comp_groups = subparsers.add_parser('uv_comp_groups', help='Compare UV radiation damage between different sample groups')
   parser_uv_comp_groups.add_argument('-i1', '--input1', action='store', nargs='?', help='Input CPD count list file 1, first column is file location, second column is file name', required=NOT_DEBUG)
@@ -232,7 +231,7 @@ def main():
     uv_comp_genome_region(logger, args.input, args.output, args.fasta, args.count_type, args.coordinate_file, args.genome, args.size_factor_file, args.space, args.add_chr)
   elif args.command == "uv_comp_regions":
     logger = initialize_logger(args.output + ".log", args)
-    uv_comp_regions(logger, args.input, args.output, args.fasta, args.count_type, args.coordinate_file1, args.coordinate_file2, args.genome, args.size_factor_file, args.space, args.add_chr)
+    uv_comp_regions(logger, args.input, args.output, args.fasta, args.count_type, args.coordinate_file1, args.coordinate_file2, args.genome, args.space, args.add_chr)
   elif args.command == "uv_comp_groups":
     logger = initialize_logger(args.output + ".log", args)
     uv_comp_groups(logger, args.input1, args.input2, args.output, args.count_type, args.genome, args.size_factor_file)
