@@ -123,7 +123,7 @@ The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode
 |UV|GAACTGAT|UV.fastq.gz|
 
 ## 2. General QC
-Without going into detail, we recommend previously established methods such as FASTQC 12 and QC3 14 for this general QC step.
+Without going into detail, we recommend previously established methods such as FASTQC and QC3 for this general QC step.
 
 ## 3. Generate index files for reference genome (FASTA) files
 ```
@@ -203,16 +203,21 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bam.bai
 ```
 ## 7. (Optional) Generate text files to inform estimated lesions along chromosomes
 (i)	Generate a binwise dinucleotide site summary based on the reference genome
+```
 cpdseqer fasta2bincount -i [INPUT_FA] [-b [BLOCK]] -o [OUTPUT]
+```
 (ii)	Generate a binwise dinucleotide read-count summary based on CPD read count information
+```
 cpdseqer dinucleotide2bincount -i [INPUT_DI] [-g [GENOME]] [-b [BLOCK]] -o [OUTPUT] 
-
+```
 ## 8. (Optional) Subtract out short tandem repeat regions or narrow down to the interested gnomic regions 
- cpdseqer filter –i [INPUT] –c [COORDINATE] –o [OUTPUT_PREFIX] [-m {subtract,intersect}]
-
+``` 
+cpdseqer filter –i [INPUT] –c [COORDINATE] –o [OUTPUT_PREFIX] [-m {subtract,intersect}]
+```
 ## 9. (Optional) Estimate sample-wise normalization factors
+```
 cpdseqer size_factor -i [INPUT] -o [OUTPUT_PREFIX] [--calc_type {site_union,chrom_dinucleotide} }]
-
+```
 ## 10. Quality control
 QC based on dinucleotide count results can be performed using the following command:
 ```
