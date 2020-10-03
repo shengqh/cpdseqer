@@ -17,7 +17,7 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-option_file="multiQC.options.txt"
+option_file="GSE119249.multiQC.options.txt"
 knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
 library(knitr) # kable
 library(reshape2) # dcast
@@ -45,7 +45,8 @@ if (!exists('smps')) {
 } else {
 	meta <- read.delim(smps,head=F,as.is=T)
 	K <- nrow(meta)
-	feedback=paste0('**Study**: *',exp,'*; **Genome**: *',gn,'*; ',K,'* *samples;* **CPM_TMMnormalized**: *',libSizeNorm,'* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
+	libSizeNorm.str <- ifelse(is.null(libSizeNorm),'NULL',libSizeNorm)
+	feedback=paste0('**Study**: *',exp,'*; **Genome**: *',gn,'*; ',K,'* *samples;* **CPM_TMMnormalized**: *',libSizeNorm.str,';* **cntType**: *',cntType,'*; **DINUC**: *',paste0(dinuc,collapse=','),'*')
 	feedback <- gsub('rCnt','ReadCount',feedback)
 	feedback <- gsub('sCnt','SiteCount',feedback)
 	effRange <- switch(cntType,
@@ -75,6 +76,7 @@ if (!exists('smps')) {
 	tbl3indices <- cbind(Efficiency=signif(effs,nDigit),Contrast=signif(conts,nDigit),Symmetry=paste(syms,1,sep=':'))
 	colnames(tbl3indices)[3] <- 'Symmetry (Forward:Reverse)'
 	rownames(tbl3indices) <- samples
+	chrDinucMat <- compileMat_chrDinuc(counts,samples,cntType)
 }
 ```
 
@@ -88,12 +90,23 @@ __Efficiency&Contrast__
 
 __Read Count Distribution__
 
+__Principal Component Analysis of Chromosome-Dinucleotide Counts__
+
+__Heatmap of Chromosome-Dinucleotide Counts__
+
+__Sample Pairwise Correlation based on Chromosome-Dinucleotide Counts__
+
+
 </font>
 ```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 plotM_EffCont(effs,conts,effRange,contRange,exp)
 knitr::opts_chunk$set(echo = TRUE,fig.width=12,fig.height=6)
 plotM_rcDistrib.res <- plotM_rcDistrib(bedS,exp,gn,libSizeNorm,dinuc,pts=c(0,5,10))
 detach(QCrefRange[[gn]])
+write.csv(chrDinucMat,paste0(exp,'.chrDinucMat.csv')) # Will save a CSV file for chrDinuc Matrix, identified with study name.
+plotPCA(t(chrDinucMat),colnames(chrDinucMat),title=paste(exp,'PCA'))
+plotHeatmap(t(chrDinucMat),colnames(chrDinucMat),title=paste(exp,'Heatmap'))
+plotCorrelation(chrDinucMat,title=paste(exp,'Sample Correlation'))
 ```
 
 # QC tables

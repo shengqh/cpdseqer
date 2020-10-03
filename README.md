@@ -2,6 +2,29 @@
 
 This package is used to do CPD sequence data analysis.
 
+# Table of Contents
+1. [Prerequisites](#Prerequisites)
+2. [Installation](#Installation)
+3. [Usage](#Usage)
+    1. [(Optional) Demultiplex fastq file](#1-optional-demultiplex-fastq-file)
+    2. [General QC](#2-general-qc)
+    3. [Generate index files for reference genome (FASTA) files](#3-generate-index-files-for-reference-genome-fasta-files)
+    4. [Align reads to genome using bowtie2](#4-align-reads-to-genome-using-bowtie2)
+    5. [(Optional) Correct GC content bias](#5-optional-correct-gc-content-bias)
+    6. [Count UV radiation induced DNA damage](#6-count-uv-radiation-induced-dna-damage)
+    7. [(Optional) Generate text files to inform estimated lesions along chromosomes](#7-optional-generate-text-files-to-inform-estimated-lesions-along-chromosomes)
+    8. [(Optional) Subtract out short tandem repeat regions or narrow down to the interested gnomic regions](#8-optional-subtract-out-short-tandem-repeat-regions-or-narrow-down-to-the-interested-gnomic-regions)
+    9. [(Optional) Estimate sample-wise normalization factors](#9-optional-estimate-sample-wise-normalization-factors)
+    10. [Quality control](#10-quality-control)
+    11. [Generate a genome-wide UV damage distribution map](#11-generate-a-genome-wide-uv-damage-distribution-map)
+    12. [Draw dinucleotide pileup figure in a specific genomic region type](#12-draw-dinucleotide-pileup-figure-in-a-specific-genomic-region-type)
+    13. [Compare UV radiation damage of sample(s) against the reference genome background](#13-compare-uv-radiation-damage-of-samples-against-the-reference-genome-background)
+    14. [Compare UV damage of sample(s) against reference genome background within a specific region type](#14-compare-uv-damage-of-samples-against-reference-genome-background-within-a--specific-region-type)
+    15. [Compare UV damage between two regions for one or multiple samples](#15-compare-uv-damage-between-two-regions-for-one-or-multiple-samples)
+    16. [Compare genome-wide UV damage between two groups of samples](#16-compare-genome-wide-uv-damage-between-two-groups-of-samples)
+    17. [Compare UV damage between two groups of samples within a specific region type](#17-compare-uv-damage-between-two-groups-of-samples-within-a-specific-region-type)
+4. [Running cpdseqer using singularity](#running-cpdseqer-using-singularity)
+
 # Prerequisites
 
 Install Bowtie2 in Ubuntu with the following command: 
@@ -72,7 +95,7 @@ sudo python get-pip.py
 
 # Usage
 
-## Demultiplex fastq file
+## 1. (Optional) Demultiplex fastq file
 
 If raw sequencing data in FASTQ format is multiplexed, it needs to be first de-multiplexed based on barcode sequence. Otherwise, skip to the next step. To de-multiplex a multiplexed FASTQ file, use the following command:
 
@@ -112,18 +135,34 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode.txt
 An alternative method to perform demultiplex is using [Je](https://gbcs.embl.de/portal/tiki-index.php?page=Je).
 
 ```
-je demultiplex F1=example.fastq.gz BF=barcode_je.txt O=.
+je demultiplex F1=[INPUT] BF=[JE_BARCODEFILE] O=[OUTPUT]
 ```
 
-The [barcode_je.txt](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
+The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
 
 ||||
 |---|---|---|
 |Control|ATCGCGAT|Control.fastq.gz|
 |UV|GAACTGAT|UV.fastq.gz|
 
-## Align reads to genome using bowtie2
+## 2. General QC
+Without going into detail, we recommend previously established methods such as FASTQC and QC3 for this general QC step.
 
+## 3. Generate index files for reference genome (FASTA) files
+```
+bowtie2-build [–-threads [THREADS]][INPUT] [OUTPUT]
+```
+## 4. Align reads to genome using bowtie2
+(A)	If sequencing data is single-end, use the following command:
+
+```
+bowtie2 -p [THREADS] -x [INDEX] -U [FASTQ] -S [SAM] | samtools sort –o [OUTPUT] –T [TEMP_PREFIX] [-@ [THREADS]] [–m [MAX_MEMORY]]
+```
+(B)	If sequencing data is pair-end, use the following command:
+```
+bowtie2 -p [THREADS] -x [INDEX] -1 [FASTQ1] -2 [FASTQ2] –S [SAM] | samtools sort –o [OUTPUT] –T [TEMP_PREFIX] [-@ [THREADS]] [–m [MAX_MEMORY]]
+```
+for example,
 ```
 bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz | samtools sort -@ 8 -m 4G -o Control.bam -T Control -
 samtools index Control.bam
@@ -138,13 +177,19 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_bowtie2.tar.gz
 tar -xzvf hg38_bowtie2.tar.gz
 cd ..
 ```
+## 5. (Optional) Correct GC content bias
 
-## Count UV radiation induced DNA damage
+deepTools can be used to correct GC bias on bam file.
+```
+(i)	computeGCBias -b [IN_BAM] –g [GENOME] --effectiveGenomeSize [GENOME_SIZE] –GCbiasFrequenciesFile [TEXT_OUT] [-p [THREADS]]
+(ii)	correctGCBias -b [IN_BAM] –o [OUT_BAM] –g [GENOME] --effectiveGenomeSize [GENOME_SIZE]–GCbiasFrequenciesFile [TEXT_OUT] [-p [THREADS]]
+```
+## 6. Count UV radiation induced DNA damage
 
 This step completes raw data processing and generates important output files that will be required in multiple steps in the following workflow. 
 
 ```
-usage: cpdseqer bam2dinucleotide [-h] -i [INPUT] -g [FASTA] [-q [MAPPING_QUALITY]] [-m MIN_COVERAGE] [-u] [-t] -o [OUTPUT]
+usage: cpdseqer bam2dinucleotide [-h] -i [INPUT] -g [FASTA] [-q [MAPPING_QUALITY]] [-m [MIN_COVERAGE]] [-u] [-t] -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -179,11 +224,28 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/UV.bam.bai
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bam
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bam.bai
 ```
-
-## Quality control
-
+## 7. (Optional) Generate text files to inform estimated lesions along chromosomes
+(i)	Generate a binwise dinucleotide site summary based on the reference genome
+```
+cpdseqer fasta2bincount -i [INPUT_FA] [-b [BLOCK]] -o [OUTPUT]
+```
+(ii)	Generate a binwise dinucleotide read-count summary based on CPD read count information
+```
+cpdseqer dinucleotide2bincount -i [INPUT_DI] [-g [GENOME]] [-b [BLOCK]] -o [OUTPUT] 
+```
+## 8. (Optional) Subtract out short tandem repeat regions or narrow down to the interested gnomic regions 
+``` 
+cpdseqer filter –i [INPUT] –c [COORDINATE] –o [OUTPUT_PREFIX] [-m {subtract,intersect}]
+```
+## 9. (Optional) Estimate sample-wise normalization factors
+```
+cpdseqer size_factor -i [INPUT] -o [OUTPUT_PREFIX] [--calc_type {site_union,chrom_dinucleotide} }]
+```
+## 10. Quality control
 QC based on dinucleotide count results can be performed using the following command:
-
+```
+cpdseqer qc [-h] -i [INPUT] -o [OUTPUT] [-n [NAME]] [--count_type {rCnt,sCnt}}] [-g [GENOME]] [-s [SIZE_FACTOR_FILE]]
+```
 ```
 usage: cpdseqer qc [-h] -i [INPUT] [-n [NAME]] [--count_type [COUNT_TYPE]] -o [OUTPUT]
 
@@ -238,9 +300,37 @@ wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 
 ```
+## 11. Generate a genome-wide UV damage distribution map
 
-## Draw position figure
+```
+usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] [-n [{None,Total,LocalGC}]] -o [OUTPUT]
 
+optional arguments:
+  -h, --help            show this help message and exit
+  -i [INPUT], --input [INPUT]
+                        Input dinucleotide list file, first column is file location, second column is file name
+  -b [BLOCK], --block [BLOCK]
+                        Block size for summerize dinucleotide count (default 100000)
+  -d [DB], --db [DB]    Input database version, hg38 or hg19 (default hg38)
+  -n [{None,Total,LocalGC}], --norm_type [{None,Total,LocalGC}]
+                        Normalization type
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file prefix
+```
+
+for example:
+
+```
+cpdseqer fig_genome -i dinucleotide.list -d hg38 -n Total -o output_prefix
+```
+
+The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
+
+## 12. Draw dinucleotide pileup figure in a specific genomic region type
+
+```
+cpdseqer uv_comp_genome [-h] -i [INPUT] -o [OUTPUT] [–g [GENOME]] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+```
 ```
 usage: cpdseqer fig_position [-h] -i [INPUT] -c [COORDINATE_FILE] [-b [BACKGROUND_FILE]] [-s] [--add_chr] [-t] -o [OUTPUT]
 
@@ -287,31 +377,35 @@ wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.bed.bgz.tbi
 wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.count
 ```
 
-## Generate a genome-wide UV damage distribution map
+## 13. Compare UV radiation damage of sample(s) against the reference genome background
 
 ```
-usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] [-n [{None,Total,LocalGC}]] -o [OUTPUT]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  -i [INPUT], --input [INPUT]
-                        Input dinucleotide list file, first column is file location, second column is file name
-  -b [BLOCK], --block [BLOCK]
-                        Block size for summerize dinucleotide count (default 100000)
-  -d [DB], --db [DB]    Input database version, hg38 or hg19 (default hg38)
-  -n [{None,Total,LocalGC}], --norm_type [{None,Total,LocalGC}]
-                        Normalization type
-  -o [OUTPUT], --output [OUTPUT]
-                        Output file prefix
+cpdseqer uv_comp_genome [-h] -i [INPUT] -o [OUTPUT] [–g [GENOME]] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
 ```
 
-for example:
+## 14. Compare UV damage of sample(s) against reference genome background within a  specific region type
 
 ```
-cpdseqer fig_genome -i dinucleotide.list -d hg38 -n Total -o output_prefix
+cpdseqer uv_comp_genome_region [-h] -i [INPUT] -o [OUTPUT] -c [COORDINATE_FILE]  -f [FASTA] [--add_chr] [--space] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
 ```
 
-The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
+## 15. Compare UV damage between two regions for one or multiple samples
+
+```
+cpdseqer uv_comp_regions [-h] -i [INPUT] -o [OUTPUT] -c1 [COORDINATE_FILE1] -c2 [COORDINATE_FILE2] -f [FASTA] [--add_chr] [--space] [--count_type [COUNT_TYPE]]
+```
+
+## 16. Compare genome-wide UV damage between two groups of samples
+
+```
+cpdseqer uv_comp_groups [-h] -i1 [INPUT1] -i2 [INPUT2] -o [OUTPUT] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+```
+
+## 17. Compare UV damage between two groups of samples within a specific region type
+
+```
+cpdseqer uv_comp_groups_region [-h] -i1 [INPUT1] -i2 [INPUT2] -o [OUTPUT] -c [COORDINATE_FILE] [--add_chr] [--space] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+```
 
 # Running cpdseqer using singularity
 

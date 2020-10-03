@@ -1,7 +1,3 @@
-# New features in August 2020: 
-### 1. New definition of Efficiency; 
-### 2. Percentage of CPD-associated sites for single-sample QC;
-### 3. Normalization of library size with TMM reflected in multiQC and all three scenarios of statistical comparisons.
 dinuc4p <- list(
 	hg19=c(TT=0.0986,TC=0.0595,CC=0.0515,CT=0.0700),#0.7204
 	hg38=c(TT=0.0980,TC=0.0594,CC=0.0521,CT=0.0700),#0.7206
@@ -496,12 +492,12 @@ plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
 	pctg.all <- signif(rcSitePctg(bed0,gn,pts)*100,3) # use unit %
   layout(matrix(1:2,nr=1))	
 	par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5)
-	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
+	barplot(Freq,beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinucleotides'),legend.text=T,
 		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
 	mtext(side=2,line=5,text='Frequency',cex=2)
-	barplot(pctg.all[-nrow(pctg.all),],beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinuceotides'),legend.text=T,
+	barplot(pctg.all[-nrow(pctg.all),],beside=T,log='y',las=1,main=paste(sample,'\nCPD-forming dinucleotides'),legend.text=T,
 		args.legend=list(x='topright',pt.cex=1.5,cex=1.2))
-	mtext(side=2,line=5,text='Proportion',cex=2)
+	mtext(side=2,line=5,text='Percentage (%)',cex=2)
   freqTbl <- rbind(Freq,All=Freq.all)
 	colnames(pctg.all) <- paste(colnames(freqTbl),'(%)')
 	colnames(freqTbl) <- paste(colnames(freqTbl),'(frequency)')
@@ -515,16 +511,17 @@ plot_rcDistrib <- function(bed0,sample='',gn='hg38',pts=c(0,5,10)) {
 # INVOKED by rcSitePctg2one(),plot_rcDistrib(). 
 # INPUT bed0: data frame read from bed file (secondary output of symmetry()) 
 # OUTPUT: Five-by-three percentage site table. Top four rows for TT, TC, CC, and CT, bottom row for All.
+# UPDATE 9/15/20: Removed unnecessary 2 times multiplication in two places. Those percentages in single-sample QC report should increase by two.
 rcSitePctg <- function(bed0,gn='hg38',pts=c(0,5,10)) { # Read Count Sites Percentages
 	bed0 <- bed0[bed0[,6]=='+',] # using forward (+) sites only.
 	rc <- bed0[,5]
 	DINUC4=c('TT','TC','CC','CT')
 	RC4 <- split(rc,factor(bed0[,4]))[DINUC4]
-	scope <- floor(dinuc4p[[gn]]*(2*gnNucs[gn]))
+	scope <- floor(dinuc4p[[gn]]*gnNucs[gn])
   Freq <- sapply(pts,function(x) sapply(RC4,exceedingCnt,x))
 	pctg <- Freq/scope
   Freq.all <- exceedingCnt(rc,pts)
-	pctg.all <- Freq.all/(2*gnNucs[gn])
+	pctg.all <- Freq.all/gnNucs[gn]
 	pctgCols <- rbind(pctg,All=pctg.all)
 	colnames(pctgCols) <- paste('Reads',pts,sep='>')
 	pctgCols # percentage columns
@@ -583,7 +580,7 @@ freqBarplot_on_pts <- function(rcS,pts,prefix='Reads') {
   Freq1 <- Freq[order(-Freq[,1]),]
 	colnames(Freq) <- paste(prefix,pts,sep='>')
   par(mar=c(6,8,6,2),fin=c(12,6),cex.main=1.5,cex.axis=1.5) #mar=c(6,8,6,2),
-  barplot(Freq1,beside=T,log='y',las=1,main=paste(exp,'\nCPD-forming dinuceotides'),legend.text=T,
+  barplot(Freq1,beside=T,log='y',las=1,main=paste(exp,'\nCPD-forming dinucleotides'),legend.text=T,
     args.legend=list(x='topright',bty='n',pt.cex=1.2))
   mtext(side=2,line=5,text='Frequency',cex=2)
 	Freq
@@ -636,5 +633,77 @@ plot_particles <- function(indexVal,index='Efficiency',indexRange=c(0.576,0.813)
 	text(median(indexVal),-0.4,'reference',cex=1.2,col='gray')
 	axis(side=1)#,at=seq(from=min(indexVal),to=max(indexVal),len=5))
 	axis(side=2,at=1:K,labels=names(indexVal),las=1)
+}
+
+# compileMat_chrDinuc(): Compile a matrix for chr-by-dinucleotide entities (n=384 for human) across multiple samples
+# INPUT samples: vector of individual CNT files.
+# INPUT smpnames: sample label associated with Count file smp.
+# OUTPUT mat: a data matrix with columns for separate samples, and if it is human there are ~384 rows for chr_di combinations.
+compileMat_chrDinuc <- function(samples,smpnames,cntType='rCnt') {
+  #samples <- unlist(strsplit(grp,','))
+  for (i in 1:length(samples)) {
+    sample <- samples[i]
+		cntContent <- read.delim(sample,as.is=T)
+		cnt <- switch(cntType,
+			rCnt=cntContent[,'ReadCount'],
+			sCnt=cntContent[,'SiteCount']
+		)
+		names(cnt) <- paste(cntContent$Chromosome,cntContent$Dinucleotide,sep='_')
+		if (i==1) {
+			mat <- matrix(cnt,nc=1,dimnames=list(names(cnt),i))
+		} else {
+			mat <- cbind(mat,cnt[rownames(mat)])
+		}
+  }
+	colnames(mat) <- smpnames
+	if (any(grepl('chr',rownames(mat))))
+		mat <- mat[grepl('chr',rownames(mat)),] # If regular chr names are present, retain only records of regular chr names.
+	mat
+}
+# plotPCA(): plot PCA of multi-sample chr_dinuc matrix.
+# INPUT labels: sample names shown in PCA plot, with consistent order as rows of dat. 
+# INPUT dat: variables are in columns.
+# INPUT cols: color names for each sample.
+# INPUT pch: shape parameter for each sample. Default to one same shape pch=16.
+plotPCA <- function(dat,labels,cols=rainbow(nrow(dat)),title='Experiment',pch=16,scale=T) { #variables are in columns
+  res <- prcomp(dat,scale=scale) #,scale=T
+  newx <- res$x
+  varpct <- round(100*summary(res)$importance['Proportion of Variance',1:2],1)
+  xylabels <- paste0('PC',1:2,' (',varpct,'%)')
+  #pdf(paste('PCA',title,'pdf',sep='.'))
+  par(mar=par()$mar+c(0,5,0,0),xpd=T,bty='l')
+  plot(newx[,1],newx[,2],xlab=xylabels[1],ylab=xylabels[2],pch=pch,col=cols,main=title,cex=2,cex.lab=1.5,cex.axis=1.2)
+	text(newx[,1]+1,newx[,2]+1,labels,font=3)
+  legend('topright',col=cols,pch=16,legend=labels, bty='n',inset=c(0,-0.3) ) # Plot legend at topright, external area
+  #dev.off()
+}
+
+# plotHeatmap(): plot heatmap for input data matrix.
+# INPUT dat: variables are in columns.
+# INPUT labels: sample names shown in PCA plot, with consistent order as rows of dat.
+# INPUT cols: color names for each sample.
+# INPUT clust: logic variable indicating if to perform clustering on subjects. Recommend to F for input square PCC matrix.
+# NOTE: Hierarchical clustering uses average clustering with 1-cor() as distance.
+plotHeatmap <- function(dat,labels,cols=rainbow(nrow(dat)),title='Experiment',clust=T,scale='column',cmar=20) {
+	if (!require(gplots)) stop('Please install library gplots for heatmap.2 function')
+	avgClust <- function(x) hclust(x,method='average')
+  if (ncol(dat)>10) {
+     labCol <- rep('',ncol(dat))
+  } else {
+     labCol <- colnames(dat)
+  }
+	invCorDist <- function(x) as.dist(1-cor(t(x)))
+  heatmap.2(dat,trace='none',density.info='none',Rowv=clust,hclustfun=avgClust,distfun=invCorDist,
+		col=c(colorRampPalette(c("white","blue"))(83)),key.par=list(pin=c(1,0.15)),RowSideColors=cols,
+		labRow=labels,labCol=labCol, scale=scale, symbreaks=F, margins=c(cmar,cmar),main=title)
+	#legend('bottomright',pch=15,pt.cex=2,cex=1.3,col=cols,legend=labels,horiz=F,,bty='n',inset=c(-0.05,0))
+}
+
+
+# plotCorrelation(): Leverages pairs.panels() from package psych to plot pairwise scatterplot.
+# INPUT revdat: columns correspond to subjects whose pairwise correlations are to be examined. (Contrary to dat in plotPCA() & plotHeatmap)
+plotCorrelation <- function(revdat,method=c('pearson','spearman','kendall')[1],title='Experiment') {
+	if (!require(psych)) stop('Please install library psych for pairs.panels function')
+	pairs.panels(revdat,method=method,main=title)
 }
 

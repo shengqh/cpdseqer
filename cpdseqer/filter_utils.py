@@ -9,7 +9,7 @@ from Bio import bgzf
 from collections import OrderedDict
 from _ctypes import ArgumentError
 
-from .common_utils import check_file_exists, runCmd, write_count_file, check_tool_exists
+from .common_utils import check_file_exists, runCmd, write_count_file, check_tool_exists, dinucleotide_to_count
 
 def filter(logger, source_file, target_file, output_prefix, method):
   check_file_exists(source_file)

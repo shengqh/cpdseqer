@@ -16,8 +16,12 @@ def readCoordinate(fin, addChr, delimit):
   result = []
   for line in fin:
     parts = line.rstrip().split(delimit)
+    if (len(parts) < 3):
+      raise Exception("Wrong line of bed format: %s" % line.rstrip())
     chrom = "chr" + parts[0] if addChr else parts[0] 
-    result.append(CategoryItem(chrom, int(float(parts[1])), int(float(parts[2])), None))
+    start = int(float(parts[1]))
+    end = int(float(parts[2]))
+    result.append(CategoryItem(chrom, start, end, None))
   return(result)
 
 def fig_position(logger, dinucleotideFileList, outputPrefix, coordinateFile, backgroundFile=None, useSpace=False, addChr=False, test=False):
@@ -57,7 +61,7 @@ def fig_position(logger, dinucleotideFileList, outputPrefix, coordinateFile, bac
     with gzip.open(coordinateFile, "rt") as fin:
       coordinates = readCoordinate(fin, addChr, delimit)
   else:
-    with open(coordinate, "rt") as fin:
+    with open(coordinateFile, "rt") as fin:
       coordinates = readCoordinate(fin, addChr, delimit)
 
   maxIndex = max([cor.getLength() for cor in coordinates])
