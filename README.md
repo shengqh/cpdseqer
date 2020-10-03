@@ -7,6 +7,23 @@ This package is used to do CPD sequence data analysis.
 2. [Installation](#Installation)
 3. [Usage](#Usage)
     1. [(Optional) Demultiplex fastq file](#1-optional-demultiplex-fastq-file)
+    2. [General QC](#2-general-qc)
+    3. [Generate index files for reference genome (FASTA) files](#3-generate-index-files-for-reference-genome-fasta-files)
+    4. [Align reads to genome using bowtie2](#4-align-reads-to-genome-using-bowtie2)
+    5. [(Optional) Correct GC content bias](#5-optional-correct-gc-content-bias)
+    6. [Count UV radiation induced DNA damage](#6-count-uv-radiation-induced-dna-damage)
+    7. [(Optional) Generate text files to inform estimated lesions along chromosomes](#7-optional-generate-text-files-to-inform-estimated-lesions-along-chromosomes)
+    8. [(Optional) Subtract out short tandem repeat regions or narrow down to the interested gnomic regions](#8-optional-subtract-out-short-tandem-repeat-regions-or-narrow-down-to-the-interested-gnomic-regions)
+    9. [(Optional) Estimate sample-wise normalization factors](#9-optional-estimate-sample-wise-normalization-factors)
+    10. [Quality control](#10-quality-control)
+    11. [Generate a genome-wide UV damage distribution map](#11-generate-a-genome-wide-uv-damage-distribution-map)
+    12. [Draw dinucleotide pileup figure in a specific genomic region type](#12-draw-dinucleotide-pileup-figure-in-a-specific-genomic-region-type)
+    13. [Compare UV radiation damage of sample(s) against the reference genome background](#13-compare-uv-radiation-damage-of-samples-against-the-reference-genome-background)
+    14. [Compare UV damage of sample(s) against reference genome background within a specific region type](#14-compare-uv-damage-of-samples-against-reference-genome-background-within-a--specific-region-type)
+    15. [Compare UV damage between two regions for one or multiple samples](#15-compare-uv-damage-between-two-regions-for-one-or-multiple-samples)
+    16. [Compare genome-wide UV damage between two groups of samples](#16-compare-genome-wide-uv-damage-between-two-groups-of-samples)
+    17. [Compare UV damage between two groups of samples within a specific region type](#17-compare-uv-damage-between-two-groups-of-samples-within-a-specific-region-type)
+4. [Running cpdseqer using singularity](#running-cpdseqer-using-singularity)
 
 # Prerequisites
 
