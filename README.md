@@ -5,7 +5,7 @@ This package is used to do CPD sequence data analysis.
 # Table of Contents
 1. [Prerequisites](#Prerequisites)
 2. [Installation](#Installation)
-3. [Usage](#Usage)
+3. [Step by step tutorial](#step-by-step-tutorial)
     1. [(Optional) Demultiplex fastq file](#1-optional-demultiplex-fastq-file)
     2. [General QC](#2-general-qc)
     3. [Generate index files for reference genome (FASTA) files](#3-generate-index-files-for-reference-genome-fasta-files)
