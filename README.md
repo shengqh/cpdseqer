@@ -93,7 +93,14 @@ curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
 sudo python get-pip.py
 ```
 
-# Usage
+# Step by step tutorial
+
+We provide example data and code for test. It requires 34G for downloading and additional 20G for testing. Remember to come back to folder cpdseqer after each step.
+
+```
+wget -r --no-parent --reject "index.html*" https://cqsweb.app.vumc.org/Data/cpdseqer/
+cd cqsweb.app.vumc.org/Data/cpdseqer/
+```
 
 ## 1. (Optional) Demultiplex fastq file
 
@@ -112,10 +119,11 @@ optional arguments:
                         Tab-delimited file, first column is barcode, second column is sample name
 ```
 
-for example:
+For example:
 
 ```
-cpdseqer demultiplex -i example.fastq.gz -o . -b barcode.txt
+cd T01_demultiplex/
+cpdseqer demultiplex -i ../data/example.fastq.gz -o . -b barcode.txt
 ```
 
 The [barcode.txt](https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode.txt) contains two columns indicate barcode and sample name (separated by tab).
@@ -125,20 +133,14 @@ The [barcode.txt](https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode.txt) co
 |ATCGCGAT|Control|
 |GAACTGAT|UV|
 
-You can download barcode and example.fastq.gz file:
-
-```
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/example.fastq.gz
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode.txt
-```
-
 An alternative method to perform demultiplex is using [Je](https://gbcs.embl.de/portal/tiki-index.php?page=Je).
 
 ```
-je demultiplex F1=[INPUT] BF=[JE_BARCODEFILE] O=[OUTPUT]
+cd T01_demultiplex/je
+je demultiplex F1=../../data/example.fastq.gz BF=barcode_je.txt O=.
 ```
 
-The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
+The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/Data/cpdseqer/T01_demultiplex/je/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
 
 ||||
 |---|---|---|
@@ -148,10 +150,18 @@ The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode_je.t
 ## 2. General QC
 Without going into detail, we recommend previously established methods such as FASTQC and QC3 for this general QC step.
 
+```
+cd T02_fastqc/
+fastqc -o . -t 1 --extract ../data/Control.fastq.gz
+```
+
 ## 3. Generate index files for reference genome (FASTA) files
+
 ```
-bowtie2-build [–-threads [THREADS]][INPUT] [OUTPUT]
+cd T03_build_bowtie2_index
+bowtie2-build --threads 8 ../data/bowtie2_index_2.3.5.1/GRCh38.primary_assembly.genome.fa GRCh38.primary_assembly.genome
 ```
+
 ## 4. Align reads to genome using bowtie2
 (A)	If sequencing data is single-end, use the following command:
 
@@ -162,21 +172,15 @@ bowtie2 -p [THREADS] -x [INDEX] -U [FASTQ] -S [SAM] | samtools sort –o [OUTPUT
 ```
 bowtie2 -p [THREADS] -x [INDEX] -1 [FASTQ1] -2 [FASTQ2] –S [SAM] | samtools sort –o [OUTPUT] –T [TEMP_PREFIX] [-@ [THREADS]] [–m [MAX_MEMORY]]
 ```
-for example,
+
+For example,
+
 ```
-bowtie2 -p 8  -x hg38/bowtie2_index_2.3.5.1/GRCh38.p12.genome -U Control.fastq.gz | samtools sort -@ 8 -m 4G -o Control.bam -T Control -
+cd T04_bowtie2
+bowtie2 -p 8 -x ../data/bowtie2_index_2.3.5.1/GRCh38.primary_assembly.genome -U ../data/Control.fastq.gz | samtools sort -@ 8 -m 4G -o Control.bam -
 samtools index Control.bam
 ```
 
-You can download hg38 bowtie2 index files:
-
-```
-mkdir hg38
-cd hg38
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_bowtie2.tar.gz
-tar -xzvf hg38_bowtie2.tar.gz
-cd ..
-```
 ## 5. (Optional) Correct GC content bias
 
 deepTools can be used to correct GC bias on bam file.
@@ -184,6 +188,17 @@ deepTools can be used to correct GC bias on bam file.
 (i)	computeGCBias -b [IN_BAM] –g [GENOME] --effectiveGenomeSize [GENOME_SIZE] –GCbiasFrequenciesFile [TEXT_OUT] [-p [THREADS]]
 (ii)	correctGCBias -b [IN_BAM] –o [OUT_BAM] –g [GENOME] --effectiveGenomeSize [GENOME_SIZE]–GCbiasFrequenciesFile [TEXT_OUT] [-p [THREADS]]
 ```
+
+For example,
+
+```
+cd T05_Correct_GC/T05_01_calc
+computeGCBias -p 8 -b ../../data/Control.bam --effectiveGenomeSize 2913022398 -g ../../data/hg38.2bit -l 200 --GCbiasFrequenciesFile control_freq.txt --biasPlot control.png
+
+cd ../T05_02_correct/
+correctGCBias -p 8 -b ../../data/Control.bam --effectiveGenomeSize 2913022398 -g ../../data/hg38.2bit --GCbiasFrequenciesFile ../T05_01_calc/control_freq.txt -o control.corrected.bam
+```
+
 ## 6. Count UV radiation induced DNA damage
 
 This step completes raw data processing and generates important output files that will be required in multiple steps in the following workflow. 
@@ -207,23 +222,14 @@ optional arguments:
                         Output file prefix
 ```
 
-for example:
+For example:
 
 ```
-cpdseqer bam2dinucleotide \
-  -i Control.bam \
-  -g hg38/bowtie2_index_2.3.4.1/GRCh38.p12.genome.fa \
-  -o Control
+cd T06_bam2dinucleotide
+
+cpdseqer bam2dinucleotide -i ../data/Control.bam -g ../data/bowtie2_index_2.3.5.1/GRCh38.primary_assembly.genome.fa -o Control
 ```
 
-You can download our example bam files:
-
-```
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bam
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bam.bai
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bam
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bam.bai
-```
 ## 7. (Optional) Generate text files to inform estimated lesions along chromosomes
 (i)	Generate a binwise dinucleotide site summary based on the reference genome
 ```
@@ -233,14 +239,47 @@ cpdseqer fasta2bincount -i [INPUT_FA] [-b [BLOCK]] -o [OUTPUT]
 ```
 cpdseqer dinucleotide2bincount -i [INPUT_DI] [-g [GENOME]] [-b [BLOCK]] -o [OUTPUT] 
 ```
+
+For example,
+
+```
+cd T07_bincount/T07_01_fasta2bincount/
+cpdseqer fasta2bincount -i ../../data/bowtie2_index_2.3.5.1/GRCh38.primary_assembly.genome.fa -b 100000 -o GRCh38.b100000.txt
+```
+
+Once you come back to cpdseqer folder,
+
+```
+cd T07_bincount/T07_02_dinucleotide2bincount/
+cpdseqer dinucleotide2bincount -i ../../data/Control.bed.bgz -g hg38 -b 100000 -o Control.b100000.txt
+```
+
 ## 8. (Optional) Subtract out short tandem repeat regions or narrow down to the interested gnomic regions 
+
 ``` 
 cpdseqer filter –i [INPUT] –c [COORDINATE] –o [OUTPUT_PREFIX] [-m {subtract,intersect}]
 ```
+
+For example,
+
+```
+cd T08_filter
+cpdseqer filter -i ../data/Control.bed.bgz -c ../data/hg38_UTR3.bed.gz -m intersect -o Control.UTR3
+cpdseqer filter -i ../data/Control.bed.bgz -c ../data/hg38_UTR3.bed.gz -m subtract -o Control.noUTR3
+```
+
 ## 9. (Optional) Estimate sample-wise normalization factors
 ```
 cpdseqer size_factor -i [INPUT] -o [OUTPUT_PREFIX] [--calc_type {site_union,chrom_dinucleotide} }]
 ```
+
+For example,
+
+```
+cd T09_sizefactor
+cpdseqer size_factor -i dinucleotide.list --calc_type chrom_dinucleotide -o sf
+```
+
 ## 10. Quality control
 QC based on dinucleotide count results can be performed using the following command:
 ```
@@ -261,101 +300,84 @@ optional arguments:
                         Output file prefix
 ```
 
-for example:
+For example:
 
 ```
-cpdseqer qc -i dinucleotide.list -n qc -o qc_result
+cd T10_qc
+cpdseqer qc -i single_file.list -n single -o output_single
+cpdseqer qc -i multi_file.list -n multi -o output_multi
 ```
 
-The [dinucleotide.list](https://cqsweb.app.vumc.org/Data/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
-
-|||
-|---|---|
-|Control.bed.bgz|Control|
-|UV.dinucleotide.bed.bgz|UV|
-
-You can download example files as following scripts.
-```
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bed.bgz
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.count
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bed.bgz
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.count
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/dinucleotide.list
-```
-
-The [coordinates.list](https://cqsweb.app.vumc.org/Data/cpdseqer/data/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
-
-|||
-|---|---|
-|hg38_promoter.bed|Promoter|
-|hg38_tf.bed|TFBinding|
-
-You can download example files as following scripts. The hg38_promoter.bed contains three columns only. So, Promoter (from  coordinates.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
-
-```
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/coordinates.list
-wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
-wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
-
-```
 ## 11. Generate a genome-wide UV damage distribution map
 
 ```
-usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]] [-d [DB]] [-n [{None,Total,LocalGC}]] -o [OUTPUT]
+usage: cpdseqer fig_genome [-h] -i [INPUT] [-b [BLOCK]]
+                           [-n [{None,Total,LocalGC}]] -o [OUTPUT]
+                           [-g [GENOME]]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i [INPUT], --input [INPUT]
-                        Input dinucleotide list file, first column is file location, second column is file name
+                        Input dinucleotide list file, first column is file
+                        location, second column is file name
   -b [BLOCK], --block [BLOCK]
-                        Block size for summerize dinucleotide count (default 100000)
-  -d [DB], --db [DB]    Input database version, hg38 or hg19 (default hg38)
+                        Block size for summerize dinucleotide count (default
+                        100000)
   -n [{None,Total,LocalGC}], --norm_type [{None,Total,LocalGC}]
                         Normalization type
   -o [OUTPUT], --output [OUTPUT]
                         Output file prefix
+  -g [GENOME], --genome [GENOME]
+                        Input reference genome, hg38/hg19 (default hg38) or
+                        chromosome length file
 ```
 
-for example:
+For example:
 
 ```
-cpdseqer fig_genome -i dinucleotide.list -d hg38 -n Total -o output_prefix
+cd T11_fig_genome
+cpdseqer fig_genome -i dinucleotide.list -g hg38 -o cpd_genome -n LocalGC -b 1000000
 ```
 
-The [dinucleotide.list](https://cqsweb.app.vumc.org/Data/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
+The [dinucleotide.list](https://cqsweb.app.vumc.org/Data/cpdseqer/T11_fig_genome/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
+
+|||
+|---|---|
+|../data/Control.bed.bgz|Control|
+|../data/UV.dinucleotide.bed.bgz|UV|
 
 ## 12. Draw dinucleotide pileup figure in a specific genomic region type
 
 ```
-cpdseqer uv_comp_genome [-h] -i [INPUT] -o [OUTPUT] [–g [GENOME]] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
-```
-```
-usage: cpdseqer fig_position [-h] -i [INPUT] -c [COORDINATE_FILE] [-b [BACKGROUND_FILE]] [-s] [--add_chr] [-t] -o [OUTPUT]
+usage: cpdseqer fig_position [-h] -i [INPUT] -c [COORDINATE_FILE]
+                             [-b [BACKGROUND_FILE]] [--space] [--add_chr] [-t]
+                             -o [OUTPUT]
 
 optional arguments:
   -h, --help            show this help message and exit
   -i [INPUT], --input [INPUT]
-                        Input dinucleotide list file, first column is file location, second column is file name
+                        Input dinucleotide list file, first column is file
+                        location, second column is file name
   -c [COORDINATE_FILE], --coordinate_file [COORDINATE_FILE]
-                        Input coordinate bed file (can use short name hg38/hg19 as default nucleosome file)
+                        Input coordinate bed file (can use short name
+                        hg38/hg19 as default nucleosome file)
   -b [BACKGROUND_FILE], --background_file [BACKGROUND_FILE]
                         Background dinucleotide file
-  -s, --space           Use space rather than tab in coordinate files
+  --space               Use space rather than tab in coordinate files
   --add_chr             Add chr in chromosome name in coordinate file
   -t, --test            Test the first 10000 coordinates only
   -o [OUTPUT], --output [OUTPUT]
-                        Output file name
+                        Output file prefix
 ```
 
-for example, we will calculate the dinucleotide position in nucleosome:
+For example, we will calculate the dinucleotide position in 3'UTR:
 
 ```
-cpdseqer fig_position -s -b hg38_background.bed.bgz -i dinucleotide.list -c hg38 -o cpd_position.txt
+cd T12_fig_position
+cpdseqer fig_position -c ../data/hg38_UTR3.bed.gz -b ../data/hg38_Naked.bed.bgz -i dinucleotide.list -o position
 ```
 
-Here, you can input absolute coordinate file, or hg38/hg19. hg38 and hg19 indicates the nucleosome coordinate files which can be downloaded by:
+Here, you can input absolute coordinate file, or hg38/hg19. hg38 and hg19 indicates the nucleosome coordinate files which can also be downloaded by:
 
 ```
 wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg19_interval.zip
@@ -363,48 +385,179 @@ wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg3
 
 ```
 
-You can download hg19/hg38 and yeast background file from:
-
-```
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg19_Naked.bed.bgz
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg19_Naked.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg19_Naked.count
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_Naked.bed.bgz
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_Naked.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_Naked.count
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Yeast_Naked.bed.bgz
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Yeast_Naked.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Yeast_Naked.count
-```
-
 ## 13. Compare UV radiation damage of sample(s) against the reference genome background
 
 ```
-cpdseqer uv_comp_genome [-h] -i [INPUT] -o [OUTPUT] [–g [GENOME]] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+usage: cpdseqer uv_comp_genome [-h] -i [INPUT] [--count_type [{rCnt,sCnt}]] -o
+                               [OUTPUT] [-g [GENOME]] [-s [SIZE_FACTOR_FILE]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i [INPUT], --input [INPUT]
+                        Input count list file, first column is file location,
+                        second column is file name
+  --count_type [{rCnt,sCnt}]
+                        Input count type, rCnt/sCnt (read count/site count,
+                        default rCnt)
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file prefix
+  -g [GENOME], --genome [GENOME]
+                        Input reference genome, hg38/hg19/saccer3 (default
+                        hg38)
+  -s [SIZE_FACTOR_FILE], --size_factor_file [SIZE_FACTOR_FILE]
+                        Input size factor file for normalization
 ```
+
+For example, 
+
+```
+cd T13_uv_comp_genome
+cpdseqer uv_comp_genome -i count.list -o uv_comp_genome -g hg38 --count_type sCnt -s ../data/chrom_dinucleotide.sizefactor.txt
+```
+
+The [count.list](https://cqsweb.app.vumc.org/Data/cpdseqer/T13_uv_comp_genome/count.list) contains two columns indicate dinucleotide count file and sample name (separated by tab).
+
+|||
+|---|---|
+|../data/Control.count|Control|
+|../data/UV.count|UV|
 
 ## 14. Compare UV damage of sample(s) against reference genome background within a  specific region type
 
 ```
-cpdseqer uv_comp_genome_region [-h] -i [INPUT] -o [OUTPUT] -c [COORDINATE_FILE]  -f [FASTA] [--add_chr] [--space] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+usage: cpdseqer uv_comp_genome_region [-h] -i [INPUT] [-c [COORDINATE_FILE]]
+                                      [--space] [--add_chr] [-f [FASTA]]
+                                      [--count_type [{rCnt,sCnt}]] -o [OUTPUT]
+                                      [-s [SIZE_FACTOR_FILE]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i [INPUT], --input [INPUT]
+                        Input dinucleotide list file, first column is file
+                        location, second column is file name
+  -c [COORDINATE_FILE], --coordinate_file [COORDINATE_FILE]
+                        Input coordinate bed file (can use short name
+                        hg38/hg19 as default nucleosome file)
+  --space               Use space rather than tab in coordinate file
+  --add_chr             Add chr to chromosome name in coordinate file
+  -f [FASTA], --fasta [FASTA]
+                        Input reference genome fasta file
+  --count_type [{rCnt,sCnt}]
+                        Input count type, rCnt/sCnt (read count/site count,
+                        default rCnt)
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file prefix
+  -s [SIZE_FACTOR_FILE], --size_factor_file [SIZE_FACTOR_FILE]
+                        Input size factor file for normalization
+```
+
+For example,
+
+```
+cd T14_uv_comp_genome_region
+cpdseqer uv_comp_genome_region \
+  -i dinucleotide.list \
+  -f ../data/bowtie2_index_2.3.5.1/GRCh38.primary_assembly.genome.fa \
+  -c ../data/nucleosome_hg38_interval.txt \
+  -o uv_comp_genome_region \
+  --space  \
+  -s ../data/chrom_dinucleotide.sizefactor.txt
 ```
 
 ## 15. Compare UV damage between two regions for one or multiple samples
 
 ```
-cpdseqer uv_comp_regions [-h] -i [INPUT] -o [OUTPUT] -c1 [COORDINATE_FILE1] -c2 [COORDINATE_FILE2] -f [FASTA] [--add_chr] [--space] [--count_type [COUNT_TYPE]]
+usage: cpdseqer uv_comp_regions [-h] -i [INPUT] [-c1 [COORDINATE_FILE1]]
+                                [-c2 [COORDINATE_FILE2]] [--space] [--add_chr]
+                                [-f [FASTA]] [--count_type [{rCnt,sCnt}]] -o
+                                [OUTPUT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i [INPUT], --input [INPUT]
+                        Input dinucleotide list file, first column is file
+                        location, second column is file name
+  -c1 [COORDINATE_FILE1], --coordinate_file1 [COORDINATE_FILE1]
+                        Input coordinate bed file 1
+  -c2 [COORDINATE_FILE2], --coordinate_file2 [COORDINATE_FILE2]
+                        Input coordinate bed file 2
+  --space               Use space rather than tab in coordinate file
+  --add_chr             Add chr to chromosome name in coordinate file
+  -f [FASTA], --fasta [FASTA]
+                        Input reference genome fasta file
+  --count_type [{rCnt,sCnt}]
+                        Input count type, rCnt/sCnt (read count/site count,
+                        default rCnt)
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file prefix
+```
+
+For example,
+
+```
+cd T15_uv_comp_regions
+cpdseqer uv_comp_regions \
+  -i dinucleotide.list \
+  -f ../data/bowtie2_index_2.3.5.1/GRCh38.primary_assembly.genome.fa \
+  -c1 hg38_promoter.bed \
+  -c2 hg38_tf.bed \
+  -o uv_comp_regions
 ```
 
 ## 16. Compare genome-wide UV damage between two groups of samples
 
 ```
-cpdseqer uv_comp_groups [-h] -i1 [INPUT1] -i2 [INPUT2] -o [OUTPUT] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+usage: cpdseqer uv_comp_groups [-h] -i1 [INPUT1] -i2 [INPUT2]
+                               [--count_type [{rCnt,sCnt}]] -o [OUTPUT]
+                               [-s [SIZE_FACTOR_FILE]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -i1 [INPUT1], --input1 [INPUT1]
+                        Input CPD count list file 1, first column is file
+                        location, second column is file name
+  -i2 [INPUT2], --input2 [INPUT2]
+                        Input CPD count list file 2, first column is file
+                        location, second column is file name
+  --count_type [{rCnt,sCnt}]
+                        Input count type, rCnt/sCnt (read count/site count,
+                        default rCnt)
+  -o [OUTPUT], --output [OUTPUT]
+                        Output file prefix
+  -s [SIZE_FACTOR_FILE], --size_factor_file [SIZE_FACTOR_FILE]
+                        Input size factor file for normalization
+```
+
+For example,
+
+```
+cd T16_uv_comp_groups
+cpdseqer uv_comp_groups \
+  -i1 control.list \
+  -i2 case.list \
+  -o uv_comp_groups \
+  --count_type sCnt \
+  -s ../data/chrom_dinucleotide.sizefactor.txt
 ```
 
 ## 17. Compare UV damage between two groups of samples within a specific region type
 
 ```
 cpdseqer uv_comp_groups_region [-h] -i1 [INPUT1] -i2 [INPUT2] -o [OUTPUT] -c [COORDINATE_FILE] [--add_chr] [--space] [--count_type [COUNT_TYPE]] [-s [SIZE_FACTOR_FILE]]
+```
+
+For example,
+
+```
+cd T17_uv_comp_groups_region
+cpdseqer uv_comp_groups_region \
+  -i1 control.list \
+  -i2 case.list \
+  -c ../data/nucleosome_hg38_interval.txt \
+  -o uv_comp_groups_region \
+  --count_type sCnt \
+  --space \
+  -s ../data/chrom_dinucleotide.sizefactor.txt
 ```
 
 # Running cpdseqer using singularity
@@ -424,18 +577,4 @@ singularity exec -e docker://shengqh/cpdseqer cpdseqer -h
 singularity build cpdseqer.simg docker://shengqh/cpdseqer
 singularity exec -e cpdseqer.simg bowtie2 -h
 singularity exec -e cpdseqer.simg cpdseqer -h
-```
-
-# Running step by step
-
-We provide example data and code for public download
-
-```
-wget -r --no-parent --reject "index.html*" https://cqsweb.app.vumc.org/Data/cpdseqer/
-cd cqsweb.app.vumc.org/download1/cpdseqer/data
-tar -xzvf GRCh38.p13.bowtie2.tar.gz
-rm GRCh38.p13.bowtie2.tar.gz
-cd ..
-unzip test.zip
-rm test.zip
 ```
