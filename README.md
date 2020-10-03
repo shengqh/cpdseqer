@@ -118,7 +118,7 @@ for example:
 cpdseqer demultiplex -i example.fastq.gz -o . -b barcode.txt
 ```
 
-The [barcode.txt](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode.txt) contains two columns indicate barcode and sample name (separated by tab).
+The [barcode.txt](https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode.txt) contains two columns indicate barcode and sample name (separated by tab).
 
 |||
 |---|---|
@@ -128,8 +128,8 @@ The [barcode.txt](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode.tx
 You can download barcode and example.fastq.gz file:
 
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/example.fastq.gz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode.txt
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/example.fastq.gz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode.txt
 ```
 
 An alternative method to perform demultiplex is using [Je](https://gbcs.embl.de/portal/tiki-index.php?page=Je).
@@ -138,7 +138,7 @@ An alternative method to perform demultiplex is using [Je](https://gbcs.embl.de/
 je demultiplex F1=[INPUT] BF=[JE_BARCODEFILE] O=[OUTPUT]
 ```
 
-The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/download1/cpdseqer/data/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
+The [JE_BARCODEFILE](https://cqsweb.app.vumc.org/Data/cpdseqer/data/barcode_je.txt) contains three columns indicate sample name, barcode and sample filename (separated by tab).
 
 ||||
 |---|---|---|
@@ -173,7 +173,7 @@ You can download hg38 bowtie2 index files:
 ```
 mkdir hg38
 cd hg38
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_bowtie2.tar.gz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_bowtie2.tar.gz
 tar -xzvf hg38_bowtie2.tar.gz
 cd ..
 ```
@@ -219,10 +219,10 @@ cpdseqer bam2dinucleotide \
 You can download our example bam files:
 
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/UV.bam
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/UV.bam.bai
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bam
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bam.bai
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bam
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bam.bai
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bam
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bam.bai
 ```
 ## 7. (Optional) Generate text files to inform estimated lesions along chromosomes
 (i)	Generate a binwise dinucleotide site summary based on the reference genome
@@ -267,7 +267,7 @@ for example:
 cpdseqer qc -i dinucleotide.list -n qc -o qc_result
 ```
 
-The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
+The [dinucleotide.list](https://cqsweb.app.vumc.org/Data/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
 
 |||
 |---|---|
@@ -276,16 +276,16 @@ The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinu
 
 You can download example files as following scripts.
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/UV.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/UV.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/UV.count
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Control.count
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bed.bgz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/UV.count
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bed.bgz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Control.count
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/dinucleotide.list
 ```
 
-The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
+The [coordinates.list](https://cqsweb.app.vumc.org/Data/cpdseqer/data/coordinates.list) contains two columns indicate coordinate bed file and category name (separated by tab)
 
 |||
 |---|---|
@@ -295,7 +295,7 @@ The [coordinates.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/coord
 You can download example files as following scripts. The hg38_promoter.bed contains three columns only. So, Promoter (from  coordinates.list definition) will be used as category name for all entries in the hg38_promoter.bed. The hg38_tf.bed contians four columns. The forth column in hg38_tf.bed indicates TF name which will be used as category name (--category_index 3) instead of TFBinding.
 
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/coordinates.list
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/coordinates.list
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_promoter.bed
 wget https://github.com/shengqh/cpdseqer/raw/master/data/hg38_tf.bed
 
@@ -324,7 +324,7 @@ for example:
 cpdseqer fig_genome -i dinucleotide.list -d hg38 -n Total -o output_prefix
 ```
 
-The [dinucleotide.list](https://cqsweb.app.vumc.org/download1/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
+The [dinucleotide.list](https://cqsweb.app.vumc.org/Data/cpdseqer/data/dinucleotide.list) contains two columns indicate dinucleotide file and sample name (separated by tab).
 
 ## 12. Draw dinucleotide pileup figure in a specific genomic region type
 
@@ -366,15 +366,15 @@ wget https://github.com/shengqh/cpdseqer/raw/master/cpdseqer/data/nucleosome_hg3
 You can download hg19/hg38 and yeast background file from:
 
 ```
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg19_Naked.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg19_Naked.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg19_Naked.count
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_Naked.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_Naked.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/hg38_Naked.count
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.bed.bgz
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.bed.bgz.tbi
-wget https://cqsweb.app.vumc.org/download1/cpdseqer/data/Yeast_Naked.count
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg19_Naked.bed.bgz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg19_Naked.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg19_Naked.count
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_Naked.bed.bgz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_Naked.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/hg38_Naked.count
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Yeast_Naked.bed.bgz
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Yeast_Naked.bed.bgz.tbi
+wget https://cqsweb.app.vumc.org/Data/cpdseqer/data/Yeast_Naked.count
 ```
 
 ## 13. Compare UV radiation damage of sample(s) against the reference genome background
@@ -431,7 +431,7 @@ singularity exec -e cpdseqer.simg cpdseqer -h
 We provide example data and code for public download
 
 ```
-wget -r --no-parent --reject "index.html*" https://cqsweb.app.vumc.org/download1/cpdseqer/
+wget -r --no-parent --reject "index.html*" https://cqsweb.app.vumc.org/Data/cpdseqer/
 cd cqsweb.app.vumc.org/download1/cpdseqer/data
 tar -xzvf GRCh38.p13.bowtie2.tar.gz
 rm GRCh38.p13.bowtie2.tar.gz
