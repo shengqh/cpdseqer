@@ -9,7 +9,7 @@ This package is used to do CPD sequence data analysis.
 
 3. [Usage](#Usage)
 
-3.1 [(Optional) Demultiplex fastq file](#(Optional) Demultiplex fastq file)
+3.1 [(Optional) Demultiplex fastq file](#1-optional-demultiplex-fastq-file)
 
 # Prerequisites
 
