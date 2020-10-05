@@ -95,7 +95,7 @@ def main():
   # create the parser for the "size_factor" command
   parser_size_factor = subparsers.add_parser('size_factor', help='Calculate size factor for multiple dinucleotide files')
   parser_size_factor.add_argument('-i', '--input', action='store', nargs='?', help='Input dinucleotide list file, first column is file location, second column is file name', required=NOT_DEBUG)
-  parser_size_factor.add_argument('--calc_type', action='store', nargs='?', choices=list(["site_union", "chrom_dinucleotide"]), default="chrom_dinucleotide", help='Calculate size factor for normalization')
+  parser_size_factor.add_argument('--calc_type', action='store', nargs='?', choices=list(["chrom_dinucleotide", "site_union" ]), default="chrom_dinucleotide", help='Calculate size factor for normalization')
   parser_size_factor.add_argument('-o', '--output', action='store', nargs='?', help="Output file prefix", required=NOT_DEBUG)
 
   parser_qc = subparsers.add_parser('qc', help='Quality control based on multiple dinucleotide count results')
