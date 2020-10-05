@@ -5,9 +5,11 @@ import errno
 import shutil
 import hashlib
 import gzip
+import zipfile
 from collections import OrderedDict
 from Bio import bgzf
 from shutil import which
+from io import TextIOWrapper
 
 MUT_LEVELS=['TT','TC','CC','CT']
 DINU_LEVELS=['AA', 'AC', 'AT', 'AG', 'CC', 'CA', 'CT', 'CG', 'GG', 'GA', 'GC', 'GT','TT', 'TA', 'TC', 'TG']
@@ -81,11 +83,17 @@ def initialize_logger(logfile, args):
 def read_coordinate_file(fileName, defCatName, delimit='\t', addChr=False, categoryIndex=-1, checkOverlap=False):
   #print("delimit=tab" if delimit=='\t' else "delimit=space")
   result = []
-  if fileName.endswith(".gz"):
+
+  if fileName.endswith(".zip"):
+    internalFile = os.path.basename(fileName).replace(".zip", ".txt")
+    z = zipfile.ZipFile(fileName)
+    fz = z.open(internalFile)
+    fin = TextIOWrapper(fz)
+  elif fileName.endswith(".gz"):
     fin = gzip.open(fileName, "rt")
   else:
-    fin = open(fileName, "rt")
-    
+    fin = open(fileName, "rt") 
+
   bFirst = True
   with fin:
     for line in fin:

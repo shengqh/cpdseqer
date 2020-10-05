@@ -10,19 +10,7 @@ import shutil
 from io import TextIOWrapper
 
 from .CategoryItem import CategoryItem
-from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script
-
-def readCoordinate(fin, addChr, delimit):
-  result = []
-  for line in fin:
-    parts = line.rstrip().split(delimit)
-    if (len(parts) < 3):
-      raise Exception("Wrong line of bed format: %s" % line.rstrip())
-    chrom = "chr" + parts[0] if addChr else parts[0] 
-    start = int(float(parts[1]))
-    end = int(float(parts[2]))
-    result.append(CategoryItem(chrom, start, end, None))
-  return(result)
+from .common_utils import check_file_exists, get_reference_start, runCmd, readFileMap, checkFileMap, remove_chr, write_r_script, read_coordinate_file
 
 def fig_position(logger, dinucleotideFileList, outputPrefix, coordinateFile, backgroundFile=None, useSpace=False, addChr=False, test=False):
   background_name = "__BACKGROUND__"
@@ -51,18 +39,8 @@ def fig_position(logger, dinucleotideFileList, outputPrefix, coordinateFile, bac
 
   logger.info("Reading coordinate file " + coordinateFile + " ...")
   delimit = ' ' if useSpace else '\t'
-  if coordinateFile.endswith(".zip"):
-    internalFile = os.path.basename(coordinateFile).replace(".zip", ".txt")
-    with zipfile.ZipFile(coordinateFile) as z:
-      with z.open(internalFile) as fz:
-        with TextIOWrapper(fz) as fin:
-          coordinates = readCoordinate(fin, addChr, delimit)
-  elif coordinateFile.endswith(".gz"):
-    with gzip.open(coordinateFile, "rt") as fin:
-      coordinates = readCoordinate(fin, addChr, delimit)
-  else:
-    with open(coordinateFile, "rt") as fin:
-      coordinates = readCoordinate(fin, addChr, delimit)
+  defCatName = os.path.basename(coordinateFile)
+  coordinates = read_coordinate_file(coordinateFile, defCatName, delimit, addChr)
 
   maxIndex = max([cor.getLength() for cor in coordinates])
         
