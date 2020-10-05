@@ -89,6 +89,8 @@ def read_coordinate_file(fileName, defCatName, delimit='\t', addChr=False, categ
   bFirst = True
   with fin:
     for line in fin:
+      if line.startswith('#'):
+        continue
       parts = line.rstrip().split(delimit)
       if len(parts) < 3:
         if bFirst:
