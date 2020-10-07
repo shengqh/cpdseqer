@@ -98,7 +98,7 @@ sudo python get-pip.py
 We provide example data and code for test. It requires 34G for downloading and additional 20G for testing. Remember to come back to folder cpdseqer after each step.
 
 ```
-wget -r --no-parent --reject "index.html*" https://cqsweb.app.vumc.org/Data/cpdseqer/
+wget -r --no-parent --reject "index.html*" --reject-regex "bed_files" https://cqsweb.app.vumc.org/Data/cpdseqer/
 cd cqsweb.app.vumc.org/Data/cpdseqer/
 ```
 
