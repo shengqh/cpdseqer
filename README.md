@@ -42,7 +42,12 @@ sudo apt-get install –y tabix
 Install Samtools in Ubuntu with the following command:
 
 ```
-sudo apt-get install -y samtools
+wget https://github.com/samtools/samtools/releases/download/1.10/samtools-1.10.tar.bz2
+tar -jxvf samtools-1.10.tar.bz2
+cd samtools-1.10
+./configure
+make
+sudo make install
 ```
 
 Install bedtools in Ubuntu with the following command:
