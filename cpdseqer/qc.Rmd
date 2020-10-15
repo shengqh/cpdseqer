@@ -61,15 +61,36 @@ if (!exists('bgz') | !exists('cnt')) {
 
 <font size="3"> `r feedback`</font>
 
+* **Genome** designates the reference genome compatible with the sample. Choices are human (hg38 or hg19) and yeast (sacCer3).
+
+* **BGZ** designates the dinucleotide BED file (generated in Step 6).
+
+* **CNT** designates the dinucleotide Count file (generated in Step 6).
+
+* **cntType** is short for Count Type, designating either Read Count or Site Count. The Symmetry plot below is based on the specified *cntType* only.
+
 # QC figures
+
 <font size="4">
 __Efficiency&Contrast__
-
-__CPD-forming dinucleotides__
-
-__Forward/Reverse Strand Symmetry__
-
 </font>
+
+**Efficiency** is defined as the ratio of read count proportion for CPD-associated dinucleotides (i.e., TT, TC, CC, and CT) over the baseline proportion based on dinucleotide composition within the reference genome (Eq. 1 in manuscript). This measure indicates at how much efficiency the CPD-Seq experiment enriches read counts on the four relevant dipyrimidine classes relative to the baseline genome composition. According to the currently accumulated public CPD-Seq datasets, Efficiency of human samples is between 2 and 3, and that of yeast samples is between 1.4 and 2.4.
+
+**Contrast** is defined as the ratio of reads mapped to TT dinucleotides over reads mapped to AA dinucleotides, considering both forward strand and reverse strand (Eq. 2 in manuscript). In the baseline, static scenario of the reference double-stranded genome, the ratio between total TT and AA dinucleotides should be exactly 1.0 due to their complementarity. Expected Contrast range of a CPD-Seq sample (human or yeast) is 7.5~23.2.
+
+<font size="4">
+__CPD-forming dinucleotides__
+</font>
+
+The first barplot displays how many dipyrimidine sites, in absolute number, in the genome have the interrogated quantity of read counts. The second barplot displays how much of each dipyrimidine class, in percentage, from the whole genome have the interrogated quantity of read counts. Such percentage values have normalized away the innate quantities of total dinucleotide sites for each dipyrimidine class, and thus are comparable across dipyrimidine classes, samples, or even species.
+
+<font size="4">
+__Forward/Reverse Strand Symmetry__
+</font>
+
+**Symmetry** measures reflects how a QC metrics is balanced between the forward strand and the reverse strand of the chromosomes. QC metrics are calculated for the forward and the reverse strands, respectively, and each pair of QC quantities are scaled to a sum of one. The scaled QC metrics are visualized in a stacked barplot overlaid with a central line that reflects the perfect symmetry of 0.5:0.5. Caution is raised if the distribution of paired QC metrics deviates obviously from the central line.
+
 ```{r figure,echo=F, comment=F, warning=F, dependson=F, message=F,results='asis'}
 #layout(matrix(1:3,nr=1))
 plot_EffCont(eff2,cont2,sample,EffR.r,EffR.s,ContR.r,ContR.s)
