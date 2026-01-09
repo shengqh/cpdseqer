@@ -2,6 +2,10 @@
 
 This package is used to do CPD sequence data analysis.
 
+# Data source
+
+All datasets (GSE1034875, GSE799773 and GSE1192496) used in the this repository and corresponding paper are available through the NCBI Short Read Archive (https://www.ncbi.nlm.nih.gov/sra).
+
 # Table of Contents
 1. [Prerequisites](#Prerequisites)
 2. [Installation](#Installation)
